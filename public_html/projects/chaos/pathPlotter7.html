@@ -1,0 +1,139 @@
+<html>
+<head>
+  
+  <script type="text/javascript" src="../lib/drawer.js"></script>
+
+  <link type="text/css" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.17.custom.css" rel="Stylesheet" />
+  <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.1.min.js"></script>
+  <script type="text/javascript" src="../lib/jqueryui/js/jquery-ui-1.8.17.custom.min.js"></script>
+  
+  
+  <style>
+	 #accordion div.ui-accordion-content{
+		height: 450px;
+		overflow: auto;
+		padding: 5px;
+	 }
+	 
+	 #accordion div.ui-accordion-content ul{
+		margin: 0px;
+		padding: 0px;
+	 }
+	 
+	 #accordion div.ui-accordion-content ul li{
+		list-style: none;
+		padding: 0px;
+		margin: 0px;
+	 }
+  </style>
+  
+  
+</head>
+<body>
+  
+  <canvas width="2000" height="2000" id="draw" style="border: 1px solid black; float: left;" tabindex="1"></canvas>
+  <button onclick="draw.save_image();">make image</button>
+  
+  
+  <script>
+	 
+	 var draw = new Draw($('#draw')[0]);
+	 
+	 draw.color(draw.named_color('white').rgb()).fill().rectangle($p(-draw.width()/2,-draw.height()/2),$p(draw.width()/2,draw.height()/2));
+	 
+	 function Points(){
+		var points = [];
+		
+		this.points = points;
+		
+		this.add = function(p){
+		  points.push(p);
+		}
+		
+		this.draw = function(){
+		  $a(points).each(function(p){
+			 draw.color(draw.named_color('blue').rgb()).circle(p,2);
+		  });
+		}
+		
+		this.sample = function(){
+		  return $a(points).sample();
+		}
+		
+	 }
+	 
+	 var points = new Points(); 
+	 
+	 var quality = 1;
+	 
+	 $a(draw.circle_points(5, draw.origin(), 1000/quality, Math.PI/2)).each(function(p){
+		points.add(p);
+	 });
+	 
+	 $a(draw.circle_points(5, draw.origin(), 500/quality, Math.PI/2 + Math.PI/5)).each(function(p){
+		points.add(p);
+	 });
+
+	 points.add(draw.origin());
+	 
+//	 var m = 10;
+//	 
+//	 points.add(draw.points().top_left().scale(m));
+//	 points.add(draw.points().top_right().scale(m));
+//	 points.add(draw.points().bottom_right().scale(m));
+//	 points.add(draw.points().bottom_left().scale(m));
+	 
+	 points.draw();
+	 
+	 
+	 var curr_point = draw.origin();
+	 var mag_step = 0.0002;
+	 
+	 var mag_start = 0.7;
+	 var mag_end = 1;
+	 
+	 var mag = mag_start;
+	 
+	 
+	 
+	 draw.context.scale(quality,quality);
+	 
+	 
+	 draw.color(draw.named_color('black').rgb());
+	 
+	 draw.animate(function(){
+		
+		
+		var draw_points = 3000;
+		var furthest = Math.max(Math.abs(mag_end-1),Math.abs(mag_start-1));
+		var dist = Math.abs(mag-1)
+		draw_points *= dist/furthest;
+		
+		draw.times(draw_points,function(){
+		  var rand_point = points.sample();
+
+		  curr_point = $p(curr_point.x + (rand_point.x - curr_point.x) * mag, curr_point.y + (rand_point.y - curr_point.y) * mag);
+		  
+		  
+		  draw.point(curr_point);
+		});
+		
+		mag += mag_step;
+		
+		if (mag > mag_end){
+		  mag = mag_start;
+		}
+		
+		
+		
+		
+	 });
+	 
+	 
+	 
+  </script>
+  
+  
+  
+</body>
+</html>

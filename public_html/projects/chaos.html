@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="description" content="Dimitri Tishchenko's personal page.">
+<meta name="author" content="Dimitri Tishchenko">
+
+
+<title>Dimitri Tishchenko - Descent Into Mathness</title>
+
+<!-- Bootstrap core CSS -->
+<link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Custom styles for this template -->
+<link href="/css/template.css" rel="stylesheet">
+
+<!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+<!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+
+
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+<script
+		src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<script src="/bootstrap/js/bootstrap.min.js"></script>
+
+<script src="lib/prototype.js"></script>
+  <script src="lib/processing.js"></script>
+  <script src="lib/init.js"></script>
+
+  <link type="text/css" href="lib/jqueryui/css/ui-lightness/jquery-ui-1.8.17.custom.css" rel="Stylesheet" />
+  <script type="text/javascript" src="lib/jqueryui/js/jquery-1.7.1.min.js"></script>
+  <script type="text/javascript" src="lib/jqueryui/js/jquery-ui-1.8.17.custom.min.js"></script>
+  
+  
+  <style>
+	 #accordion div.ui-accordion-content{
+		height: 450px;
+		overflow: auto;
+		padding: 5px;
+	 }
+	 
+	 #accordion div.ui-accordion-content ul{
+		margin: 0px;
+		padding: 0px;
+	 }
+	 
+	 #accordion div.ui-accordion-content ul li{
+		list-style: none;
+		padding: 0px;
+		margin: 0px;
+	 }
+  </style>
+
+
+</head>
+
+<body>
+
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed"
+					data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+					aria-controls="navbar">
+					<span class="sr-only">Toggle navigation</span> <span
+						class="icon-bar"></span> <span class="icon-bar"></span> <span
+						class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="/index.html">Dimitri Tishchenko</a>
+			</div>
+			<div id="navbar" class="collapse navbar-collapse">
+				<ul class="nav navbar-nav">
+					<li><a href="/index.html">Home</a></li>
+					<li class="active"><a href="/projects/index.html">Projects</a></li>
+					<li><a href="/blog/index.html">Blog</a></li>
+					<li><a href="/photography/index.html">Photography</a></li>
+					<li><a href="/contact/index.html">Contact</a></li>
+				</ul>
+			</div>
+			<!--/.nav-collapse -->
+		</div>
+	</nav>
+
+	<div class="container">
+		<div class="starter-template">
+			
+			<a href="/projects/index.html"
+					class="btn btn-primary">
+				<span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span> 
+				Back
+			</a>
+			
+			<h1>Chaos Game Paths Plotter </h1>
+			
+			
+<script>
+  
+  
+  
+  function saveImage(canvas) {  
+	 
+	 
+	 
+	 var img = canvas.toDataURL("image/png");
+	 document.write('<img src="'+img+'"/>');
+
+  } 
+  
+  var presets = {
+	 'pentagon_outer': '{"points": [{"x": 500, "y": 200}, {"x": 595, "y": 269}, {"x": 559, "y": 381}, {"x": 441, "y": 381}, {"x": 405, "y": 269}], "detail": 90, "mag_min": 1, "mag_max": 1.53}',
+	 'pentagon_inner': '{"points": [{"x": 501, "y": 11}, {"x": 796, "y": 226}, {"x": 683, "y": 574}, {"x": 318, "y": 574}, {"x": 205, "y": 226}], "detail": 90, "mag_min": 0.46, "mag_max": 1}',
+	 'square_phi': '{"points": [{"x": 565, "y": 233}, {"x": 565, "y": 367}, {"x": 432, "y": 367}, {"x": 432, "y": 233}], "detail": 90, "mag_min": 1.618, "mag_max": 1.618}',
+	 'triangle_outer': '{"points": [{"x": 498, "y": 212}, {"x": 585, "y": 362}, {"x": 411, "y": 362}], "detail": 90, "mag_min": 1, "mag_max": 1.6}',
+	 'triangle_inner': '{"points": [{"x": 505, "y": 6}, {"x": 834, "y": 576}, {"x": 176, "y": 576}], "detail": 90, "mag_min": 0.36, "mag_max": 1}',
+	 'square_outer': '{"points": [{"x": 571, "y": 229}, {"x": 571, "y": 371}, {"x": 429, "y": 371}, {"x": 429, "y": 229}], "detail": 90, "mag_min": 1, "mag_max": 1.5}',
+	 'square_inner': '{"points": [{"x": 799, "y": 3}, {"x": 799, "y": 593}, {"x": 208, "y": 593}, {"x": 208, "y": 3}], "detail": 90, "mag_min": 0.5, "mag_max": 1}',
+	 'triangle_phi': '{"points": [{"x": 498, "y": 212}, {"x": 585, "y": 362}, {"x": 411, "y": 362}], "detail": 90, "mag_min": 1.618, "mag_max": 1.618}',
+	 'triangle_opf': '{"points": [{"x": 499, "y": 208}, {"x": 604, "y": 389}, {"x": 394, "y": 389}], "detail": 90, "mag_min": 1.5, "mag_max": 1.5}',
+	 'pentagon_opf': '{"points": [{"x": 500, "y": 200}, {"x": 595, "y": 269}, {"x": 559, "y": 381}, {"x": 441, "y": 381}, {"x": 405, "y": 269}], "detail": 90, "mag_min": 1.5, "mag_max": 1.5}',
+	 'pentagon_opte': '{"points": [{"x": 500, "y": 166}, {"x": 627, "y": 258}, {"x": 579, "y": 407}, {"x": 422, "y": 407}, {"x": 374, "y": 258}], "detail": 90, "mag_min": 1.38, "mag_max": 1.38}',
+	 'pentagon_inner_fill': '{"points": [{"x": 503, "y": 34}, {"x": 774, "y": 231}, {"x": 671, "y": 550}, {"x": 334, "y": 550}, {"x": 232, "y": 231}], "detail": 90, "mag_min": 0.62, "mag_max": 0.62}',
+	 'triangle_inner_fill': '{"points": [{"x": 505, "y": 6}, {"x": 834, "y": 576}, {"x": 176, "y": 576}], "detail": 90, "mag_min": 0.5, "mag_max": 0.5}',
+	 'square_inner_fill': '{"points": [{"x": 799, "y": 3}, {"x": 799, "y": 593}, {"x": 208, "y": 593}, {"x": 208, "y": 3}], "detail": 90, "mag_min": 0.51, "mag_max": 0.51}',
+	 'hexagon_opf': '{"points": [{"x": 600, "y": 300}, {"x": 550, "y": 387}, {"x": 450, "y": 387}, {"x": 400, "y": 300}, {"x": 450, "y": 213}, {"x": 550, "y": 213}], "detail": 90, "mag_min": 1.5, "mag_max": 1.5}',
+	 'hexagon_opff': '{"points": [{"x": 600, "y": 300}, {"x": 550, "y": 387}, {"x": 450, "y": 387}, {"x": 400, "y": 300}, {"x": 450, "y": 213}, {"x": 550, "y": 213}], "detail": 90, "mag_min": 1.44, "mag_max": 1.44}',
+	 'hexagon_pointsixseven': '{"points": [{"x": 820, "y": 305}, {"x": 663, "y": 578}, {"x": 349, "y": 578}, {"x": 192, "y": 305}, {"x": 349, "y": 32}, {"x": 663, "y": 32}], "detail": 90, "mag_min": 0.67, "mag_max": 0.67}',
+	 'hexagon_pointfive': '{"points": [{"x": 820, "y": 305}, {"x": 663, "y": 578}, {"x": 349, "y": 578}, {"x": 192, "y": 305}, {"x": 349, "y": 32}, {"x": 663, "y": 32}], "detail": 90, "mag_min": 0.5, "mag_max": 0.5}',
+	 'hexagon_inner': '{"points": [{"x": 820, "y": 305}, {"x": 663, "y": 578}, {"x": 349, "y": 578}, {"x": 192, "y": 305}, {"x": 349, "y": 32}, {"x": 663, "y": 32}], "detail": 90, "mag_min": 0.4, "mag_max": 1}',
+	 'hexagon_outer': '{"points": [{"x": 660, "y": 308}, {"x": 585, "y": 438}, {"x": 435, "y": 438}, {"x": 360, "y": 308}, {"x": 435, "y": 177}, {"x": 585, "y": 177}], "detail": 90, "mag_min": 1, "mag_max": 1.5}',
+	 'heptagon_pointFiveFour': '{"points": [{"x": 502, "y": 12}, {"x": 725, "y": 120}, {"x": 780, "y": 361}, {"x": 626, "y": 555}, {"x": 379, "y": 555}, {"x": 224, "y": 361}, {"x": 279, "y": 120}], "detail": 90, "mag_min": 0.54, "mag_max": 0.54}',
+	 'heptagon_inner': '{"points": [{"x": 502, "y": 12}, {"x": 725, "y": 120}, {"x": 780, "y": 361}, {"x": 626, "y": 555}, {"x": 379, "y": 555}, {"x": 224, "y": 361}, {"x": 279, "y": 120}], "detail": 90, "mag_min": 0.49, "mag_max": 1}',
+	 'heptagon_outer': '{"points": [{"x": 499, "y": 178}, {"x": 595, "y": 224}, {"x": 619, "y": 328}, {"x": 552, "y": 411}, {"x": 446, "y": 411}, {"x": 379, "y": 328}, {"x": 403, "y": 224}], "detail": 90, "mag_min": 1, "mag_max": 1.4}'
+  }
+  
+  function round(num, places){
+	 var s = Math.pow(10,places);
+	 return Math.round(num*s)*s;
+  }
+  
+  
+  
+  function load_preset(p){
+	 var preset = p.evalJSON();
+	 
+	 var proc = Processing.getInstanceById('draw');
+	 proc.restart();
+	 
+	 preset.points.each(function(point){
+		proc.add_attractor(point.x, point.y);
+	 });
+	 
+	 var mag_min = preset.mag_min || 1;
+	 var mag_max = preset.mag_max || 0.6;
+	 
+	 proc.set_min_mag(mag_min);
+	 proc.set_max_mag(mag_max);
+	 
+	 var info_magnitude = $('#info_magnitude')[0];
+	 jQuery('#scroller_magnitude').slider('values', [mag_min, mag_max]);
+	 info_magnitude.innerHTML = mag_min + ' - ' + mag_max;
+	 
+	 var info_rounds = $('#info_rounds')[0];
+	 jQuery('#scroller_rounds').slider('value', preset.magnitude_rounds || 20);
+	 info_rounds.innerHTML = preset.magnitude_rounds || 20;
+	 
+	 
+	 
+	 var info_zoom = $('#info_zoom')[0];
+	 var detail = preset.detail || 50;
+	 
+	 var d = 1 - (detail/100)*0.9;
+	 jQuery('#scroller_zoom').slider('value', detail);
+	 
+	 
+	 info_zoom.innerHTML = detail;
+	 
+	 proc.hide_hot_spots();
+	 
+	 proc.clear();
+	 
+	 update_info();
+  }
+  
+  
+  
+  
+  var default_detail = 50;
+  
+  function update_info(){
+	 var proc = Processing.getInstanceById('draw');
+	 var info_bookmark = $('#info_bookmark')[0];
+	 
+	 var data = {};
+	 data.points = [];
+	 
+	 var hot_spots_container = $('#hot_spots')[0];
+	 
+	 hot_spots_container.innerHTML = '';
+	 
+	 proc.get_hot_spots().each(function(point,index){
+		data.points.push(
+		  {
+			'x': Math.round(proc.unscale_mag(point.x)),
+			'y':Math.round(proc.unscale_mag(point.y))
+		  }
+		);
+		
+		var hot_spots = proc.get_hot_spots();
+		
+		var cont = $('<div/>');
+		var coords = $('<div/>').text(Math.round(point.x) + ', ' + Math.round(point.y));
+		cont.append(coords);
+
+		var type = $('<div></div>');
+		cont.append(type);
+		
+		var input_attract = $('<input/>')
+		  .attr('type', 'radio')
+		  .attr('id', 'hot_spot_type_attract_' + index)
+		  .attr('name', 'hot_spot_type_' + index);
+		
+		type.append(input_attract);
+		type.append($('<label for="' + input_attract.attr('id') + '">Attractor</label>'));
+		
+		if (hot_spots[index].type == 'attract'){
+		  input_attract.attr('checked', true);
+		}
+		
+		
+		var input_push = $('<input/>')
+		  .attr('type', 'radio')
+		  .attr('id', 'hot_spot_type_push_' + index)
+		  .attr('name', 'hot_spot_type_' + index);
+		  
+		type.append(input_push);
+		type.append($('<label for="' + input_push.attr('id') + '">Pusher</label>'));
+		
+		
+		if (hot_spots[index].type == 'push'){
+		  input_attract.attr('push', true);
+		}
+		
+		
+		
+		var draw = $('<div></div>');
+		cont.append(draw);
+		
+		var check = $('<input type="checkbox"/>')
+		check
+		  .attr('id', 'checkbox_draw_' + index)
+		  .click(function(e){
+			 var id = e.target.id;
+			 var index = id.substring(id.lastIndexOf('_')+1,id.length);
+			 proc.get_hot_spots()[index].silent = $(e.target).attr('checked');
+		  });
+		
+		
+		cont.append(check);
+		cont.append(
+		  $('<label/>')
+			 .attr('for', check.attr('id'))
+			 .text('Silent')
+		);
+		
+		
+		$(hot_spots_container).append(cont);
+		
+		
+		$('#hot_spots input').click(function(e){
+		  var id = e.target.id;
+		  var attract = id.indexOf('attract')>=0;
+		  var pusher = id.indexOf('push')>=0;
+		  var index = id.substring(id.lastIndexOf('_')+1,id.length);
+		  
+		  
+		  
+		  if (attract){
+			 proc.get_hot_spots()[index].type = 'attract';
+		  }
+		  else if (pusher){
+			 proc.get_hot_spots()[index].type = 'push';
+		  }
+		  
+		  proc.clear();
+		  
+		});
+		
+	 });
+	 
+	 data.detail = Math.round((1-proc.get_detail())*100/0.9);
+	 
+	 
+	 data.mag_min = proc.get_mag_min();
+	 data.mag_max = proc.get_mag_max();
+	 
+	 
+	 
+	 info_bookmark.innerHTML = $H(data).toJSON();
+	 
+  }
+  
+  function setup(){
+	 
+	 
+	 jQuery(function(){
+		jQuery("#accordion").accordion();
+	 });
+	 
+	 var info_zoom = $('#info_zoom')[0];
+	 var info_magnitude = $('#info_magnitude')[0];
+	 var info_rounds = $('#info_rounds')[0];
+	 
+	 jQuery('#scroller_zoom').slider({
+		slide: function(event, ui){
+		  var d = 1 - (ui.value/100)*0.9;
+		  Processing.getInstanceById('draw').set_detail(d);
+		  info_zoom.innerHTML = ui.value;
+		},
+		stop: function(event, ui){
+		  Processing.getInstanceById('draw').clear()
+		  update_info();
+		},
+		animate: 'slow',
+		value: 50
+	 });
+	 
+	 jQuery('#scroller_rounds').slider({
+		slide: function(event, ui){
+		  Processing.getInstanceById('draw').set_rounds(ui.value);
+		  info_rounds.innerHTML = ui.value;
+		},
+		stop: function(event, ui){
+		  Processing.getInstanceById('draw').clear()
+		  update_info();
+		},
+		animate: 'slow',
+		value: 20
+	 });
+	 
+	 jQuery('#scroller_magnitude').slider({
+		slide: function(event, ui){
+//		  Processing.getInstanceById('draw').set_detail(1 - (ui.value/100)*0.9);
+//		  info_zoom.innerHTML = ui.value;
+		  
+		  var proc = Processing.getInstanceById('draw');
+		  
+		  proc.set_min_mag(ui.values[0]);
+		  proc.set_max_mag(ui.values[1]);
+		  
+		  info_magnitude.innerHTML = ui.values[0] + ' - ' + ui.values[1];
+		},
+		stop: function(event, ui){
+		  Processing.getInstanceById('draw').clear();
+		  update_info();
+		},
+		animate: 'slow',
+		range: true,
+		values: [1,1.5],
+		max: 2,
+		step: 0.01
+	 });
+	 info_zoom.innerHTML = 50;
+	 info_magnitude.innerHTML = 1.0 + ' - ' + 1.5;
+	 
+	 
+
+	 
+	 
+	 
+  }
+  
+  
+</script>
+
+<table>
+  <tbody>
+	 <tr>
+		<td>
+
+<script type="application/processing">
+
+var canvas_width = 1000;
+var canvas_height = 600;
+
+//var canvas_width = 1680;
+//var canvas_height = 1050;
+
+//var canvas_width = 3360;
+//var canvas_height = 1050;
+
+
+var background_color = 255;
+var point_color = 0;
+
+//var background_color = 0;
+//var point_color = 255;
+
+
+void setup(){
+  size(canvas_width, canvas_height);
+  
+  
+  update_info();
+  //load_preset(presets['pentagon_inner'])
+  frameRate(1000);
+  loop();
+  
+}
+
+var hot_spots = [];
+
+
+void plot_hot_spots(){
+  for (var i = 0; i < hot_spots.length; i++){
+	 
+	 if (hot_spots[i].type == 'attract'){
+		fill(246,61,7);
+	 }
+	 else if (hot_spots[i].type == 'push'){
+		fill(45,26,155);
+	 }
+	 
+	 ellipse(hot_spots[i].x, hot_spots[i].y, scale_mag(10), scale_mag(10));
+  }
+}
+
+var x = width/2;
+var y = height/2;
+
+function random (min, max){
+  return ((max-min) * Math.random()) + min;
+}
+
+var dragging_hot_spot;
+var dragging_frame_counter = 0;
+var dragging_frame_counter_max = 200;
+
+
+
+var mouse_mode = 'drag';
+var translate_x = 0;
+var translate_y = 0;
+var translate_drag_x = 0;
+var translate_drag_y = 0;
+
+var dragging = false;
+
+//magnitude variables
+var mag_start = 1;
+var mag_end = 1.5;
+var mag_step = 0.0008;
+
+var taboo_magnitude = 0;
+
+var magnitude_rounds = 20;
+
+var magnitude = mag_start;
+
+var show_hot_spots = true;
+
+var zoom = 0.5;
+
+var mouse_down_x;
+var mouse_down_y;
+
+background(background_color);
+
+int distance (x1, y1, x2, y2){
+  return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+}
+
+void mousePressed(){
+  mouse_down_x = scale_mag(mouseX) - translate_x;
+  mouse_down_y = scale_mag(mouseY) - translate_y;  
+  
+  if (mouse_mode == 'drag'){
+	 
+	 dragging_hot_spot = null;
+	 for (var i = 0; i < hot_spots.length; i++){
+	  var hot_spot = hot_spots[i];
+	  if (distance(hot_spot.x, hot_spot.y, mouse_down_x, mouse_down_y) < scale_mag(20)){
+		 dragging_hot_spot = hot_spot;
+	  }
+
+	 }
+
+  }
+	 
+}
+
+void mouseDragged(){
+
+  dragging = true;
+  
+  if (dragging_hot_spot){
+	 dragging_hot_spot.x = scale_mag(mouseX) - translate_x;
+	 dragging_hot_spot.y = scale_mag(mouseY) - translate_y;
+  }
+  else{
+	 if (mouse_mode == 'drag'){
+		translate_x = scale_mag(mouseX) - mouse_down_x;
+		translate_y = scale_mag(mouseY) - mouse_down_y;
+	 }
+	 else if (mouse_mode == 'rotate'){
+	 
+		
+		var dist = Math.sqrt(Math.pow(mouse_down_x-scale_mag(mouseX), 2) + Math.pow(mouse_down_y-scale_mag(mouseY), 2));
+	 
+		hot_spots.each(function(hot_spot){
+		  var hot_spot_dist = Math.sqrt(Math.pow(mouse_down_x-hot_spot.x, 2) + Math.pow(mouse_down_y-hot_spot.y, 2));
+		  
+		  var curr_theta = Math.atan((mouse_down_x-hot_spot.x)/(mouse_down_y-hot_spot.y));
+		  
+		  hot_spot.x = mouse_down_x + hot_spot_dist*Math.cos(curr_theta);
+		  hot_spot.y = mouse_down_y + hot_spot_dist*Math.sin(curr_theta);
+		});
+	 }
+	 
+  }
+  
+}
+
+void mouseReleased(){
+  
+  console.log('mouse released');
+
+  dragging = false;
+  
+  dragging_hot_spot = null;
+  
+  clear();
+  
+  if (mouse_mode == 'drag'){
+	 console.log('test', mouse_mode);
+	 if (mouse_mode == 'drag'){
+		hot_spots.each(function(hot_spot){
+		  hot_spot.x += translate_x;
+		  hot_spot.y += translate_y;
+		});
+
+		translate_x = 0;
+		translate_y = 0;
+	 }
+  
+  }
+  
+  if (mouse_mode == 'zoom_in'){
+	 console.log('zoom', mouseX, mouseY);
+	 hot_spots.each(function(hot_spot){
+		console.log(hot_spot.x, hot_spot.y);
+		hot_spot.x += (hot_spot.x - scale_mag(mouseX)) * 0.1
+		hot_spot.y += (hot_spot.y - scale_mag(mouseY)) * 0.1
+	 });
+  }
+  else if (mouse_mode == 'zoom_out'){
+	 console.log('zoom', mouseX, mouseY);
+	 hot_spots.each(function(hot_spot){
+		console.log(hot_spot.x, hot_spot.y);
+		hot_spot.x -= (hot_spot.x - scale_mag(mouseX)) * 0.1
+		hot_spot.y -= (hot_spot.y - scale_mag(mouseY)) * 0.1
+	 });
+  }
+  
+  update_info();
+}
+
+
+void reset_parameters(){
+  magnitude = mag_start;
+  mag_counter = 0;
+  taboo_magnitude = 0;
+}
+
+void clear(){
+  background(background_color);
+  reset_parameters();
+  
+  loop();
+  
+  x = center_x;
+  y = center_y;
+}
+
+void add_random_attractor(){
+  add_attractor(random(0,canvas_width), random(0,canvas_height));
+}
+
+void toggle_hot_spots(){
+  show_hot_spots = !show_hot_spots;
+  clear();
+}
+
+void hide_hot_spots(){
+  show_hot_spots = false;
+}
+
+void add_attractor(x,y){
+  hot_spots.push({
+  type:'attract',
+  x: scale_mag(x),
+  y: scale_mag(y)
+  });
+}
+
+void addPusher(){
+  hot_spots.push({
+  type:'push',
+  x: random(0,width),
+  y: random(0,height)
+  });
+}
+
+void increaseMove(){
+  magnitude += 0.01
+  clear();
+}
+
+void decreaseMove(){
+  magnitude -= 0.01
+  clear();
+}
+
+void detail_up(){
+  if (zoom > 0.2){
+	 var old_zoom = zoom;
+	 var new_zoom = zoom - 0.1;
+
+	 
+	 hot_spots.each(function(hot_spot){
+		hot_spot.x = hot_spot.x * old_zoom / new_zoom;
+		hot_spot.y = hot_spot.y * old_zoom / new_zoom;
+		
+	 });
+	 
+	 
+	 
+	 zoom = new_zoom;
+	 
+	 
+	 
+	 
+	 clear();
+	}
+}
+
+void detail_down(){
+  var old_zoom = zoom;
+  var new_zoom = zoom + 0.1;
+  hot_spots.each(function(hot_spot){
+	 hot_spot.x = hot_spot.x * old_zoom / new_zoom;
+	 hot_spot.y = hot_spot.y * old_zoom / new_zoom;
+  });
+  
+  zoom = new_zoom;
+  clear();
+}
+
+
+function circle_points(num,x,y,rad,rotation){
+  rotation = rotation || 0;
+  
+  var points = [];
+  var angle = 2 * Math.PI/num;
+
+  for (var i = 0; i < num; i++){
+	 points.push([x + Math.cos(rotation + i * angle) * rad, y + Math.sin(rotation + i * angle) * rad]);
+  }
+  return points;
+  
+}
+
+function scale_mag(mag){
+  return mag / zoom;
+}
+
+int unscale_mag (mag){
+  return mag * zoom;
+}
+
+var center_x = canvas_width/2;
+var center_y = canvas_height/2;
+
+/*
+add_attractor(center_x, center_y);
+
+
+add_attractor(0,0);
+add_attractor(0,canvas_height);
+add_attractor(canvas_width,canvas_height);
+add_attractor(canvas_width,0);
+*/
+
+//add_attractor(center_x,center_y);
+circle_points(5, center_x, center_y, 150, -Math.PI/2).each(function(e){
+  add_attractor(e[0],e[1]);
+});
+
+set_min_mag(1);
+set_max_mag(1.6);
+
+
+
+
+
+
+int get_detail(){
+  return zoom;
+}
+
+void set_min_mag(int mag){
+  mag_start = mag;
+}
+
+void set_max_mag(int mag){
+  mag_end = mag;
+}
+
+int get_mag_max(){
+  return mag_end;
+}
+
+int get_mag_min(){
+  return mag_start;
+} 
+
+void set_rounds(int t){
+  var info_magnitude = $('#info_magnitude')[0];  
+  magnitude_rounds = t;
+}
+
+void set_detail(int z){
+  
+  
+  
+  var old_zoom = zoom;
+  var new_zoom = z;
+
+
+  hot_spots.each(function(hot_spot){
+	 hot_spot.x = hot_spot.x * old_zoom / new_zoom;
+	 hot_spot.y = hot_spot.y * old_zoom / new_zoom;
+
+  });
+
+
+
+  zoom = new_zoom;
+
+	
+}
+
+
+void restart(){
+  hot_spots = [];
+  clear();
+  //magnitude = mag_start;
+  //mag_counter = 0;
+  //taboo_magnitude = 0;
+  reset_parameters();
+  
+  loop();
+}
+
+void mouse_mode_drag(){
+  mouse_mode = 'drag';
+}
+
+void mouse_mode_zoom_in(){
+  mouse_mode = 'zoom_in';
+}
+
+void mouse_mode_zoom_out(){
+  mouse_mode = 'zoom_out';
+}
+
+void mouse_mode_rotate(){
+  mouse_mode = 'rotate';
+}
+
+void stop_rendering(){
+  noLoop();
+}
+
+var get_hot_spots(){
+  return hot_spots;
+}
+
+
+var mag_counter = 0;
+
+var prev_hot_spot_index = 0;
+
+void draw(){
+ 
+  scale(zoom, zoom);
+  
+  if (dragging && dragging_frame_counter >= dragging_frame_counter_max){
+	 background(background_color);
+	 magnitude = mag_start;
+	 
+	 dragging_frame_counter = 0;
+	 
+  }
+  
+  
+  dragging_frame_counter += 1;
+  
+  // magnitude adjustment
+  
+  //var mag_reset = mag_end - taboo_magnitude;
+  
+  //if (mag_reset < mag_start){
+//	 stop_rendering();
+  //}
+  
+  if (magnitude < mag_end){
+	 
+  
+	 magnitude += mag_step;
+  
+	 //if (magnitude >= (1-taboo_magnitude)){
+	//	magnitude = 1 + taboo_magnitude;
+	 //}
+	 //else if (magnitude <= (1+taboo_magnitude)){
+	//	magnitude = 1 - taboo_magnitude;
+	 //}
+	 //else{
+		//magnitude += mag_step;
+	 //}
+	 
+	 	 
+  }
+  else{
+  
+	 taboo_magnitude += Math.abs(mag_end-mag_start) / magnitude_rounds;
+  
+	 magnitude = mag_start;
+	 
+	 mag_counter = 0
+	 
+  }
+  
+  //$('#debug')[0].innerHTML = 'magnitude: ' + magnitude + ', taboo_magnitude: ' + taboo_magnitude + ', magnitude_rounds: ' + magnitude_rounds;
+  
+  
+  
+  
+  
+  
+  
+  translate(translate_x, translate_y);
+  
+  
+  
+  
+  if (hot_spots.length > 0){
+	 stroke(point_color);
+	 
+	 
+	 var draw_points = 2000;
+	 
+	 //draw_points *= (magnitude - mag_start) /  Math.abs(mag_end-mag_start);
+	 
+	 var furthest = Math.max(Math.abs(mag_end-1),Math.abs(mag_start-1));
+	 
+	 var dist = Math.abs(magnitude-1)
+	 
+	 draw_points *= dist/furthest;
+	 
+	 for (var i = 0; i < draw_points; i++){
+	
+		var rand_hot_spot_index = Math.floor(Math.random() * hot_spots.length);
+		
+		
+		/*
+		if (prev_hot_spot_index == 0){
+		  stroke(#FF0000);
+		}
+		else if (prev_hot_spot_index == 1){
+		  stroke(#891d91);
+		}
+		else if (prev_hot_spot_index == 2){
+		  stroke(#2e8d2e);
+		}
+		else if (prev_hot_spot_index == 3){
+		  stroke(#038d8c);
+		}
+		else{
+		  stroke(point_color);
+		}
+		*/
+
+		var rand_hot_spot = hot_spots[rand_hot_spot_index];
+
+		if (rand_hot_spot.type == 'attract'){
+		  x = x + (rand_hot_spot.x - x) * magnitude;
+		  y = y + (rand_hot_spot.y - y) * magnitude;
+	  }
+	  else if (rand_hot_spot.type == 'push'){
+		  x = x - (rand_hot_spot.x - x) * magnitude;
+		  y = y - (rand_hot_spot.y - y) * magnitude;
+	  }
+
+	  if (!rand_hot_spot.silent){
+		//point(Math.round(x)+0.5,Math.round(y)+0.5);
+		//if (prev_hot_spot_index != rand_hot_spot_index){
+		//if (prev_hot_spot_index == rand_hot_spot_index){
+		//if (prev_hot_spot_index == (rand_hot_spot_index + 1)%hot_spots.length  || prev_hot_spot_index == (rand_hot_spot_index + 4)%hot_spots.length){
+		//if (prev_hot_spot_index == (rand_hot_spot_index + 3)%hot_spots.length){
+		if (true){
+		  point(x,y);
+		}
+	  }
+	  
+	  prev_hot_spot_index = rand_hot_spot_index;
+	}
+	
+	
+	 
+  }
+  
+  
+  if (show_hot_spots){
+	 plot_hot_spots();
+  }
+  
+  
+  
+}
+
+
+
+</script>
+
+
+<canvas width="2000" height="2000" id="draw" style="border: 1px solid black;"></canvas>
+		  
+		</td>
+		<td style="vertical-align: top;">
+		  
+		  <div id="accordion">
+			 <h3><a href="#">Presets</a></h3>
+			 <div>
+				<h4>Ranged Magnitude:</h4>
+				<ul>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['triangle_outer'])">Triangle Outer</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['triangle_inner'])">Triangle Inner</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['square_outer'])">Square Outer</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['square_inner'])">Square Inner</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['pentagon_outer'])">Pentagon Outer</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['pentagon_inner'])">Pentagon Inner</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['hexagon_inner'])">Hexagon Inner</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['hexagon_outer'])">Hexagon Outer</a>
+				  </li>
+
+				</ul>
+
+				<h4>Fixed Magnitude (outer):</h4>
+				<ul>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['triangle_phi'])">Triangle (1.618)</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['triangle_opf'])">Triangle (1.5)</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['square_phi'])">Square (1.618)</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['pentagon_opf'])">Pentagon (1.5)</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['pentagon_opte'])">Pentagon (1.38)</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['hexagon_opff'])">Hexagon (1.44)</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['hexagon_opf'])">Hexagon (1.5)</a>
+				  </li>
+				</ul>
+
+				<h4>Fixed Magnitude (inner):</h4>
+				<ul>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['triangle_inner_fill'])">Triangle (0.5)</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['square_inner_fill'])">Square (0.51)</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['pentagon_inner_fill'])">Pentagon (0.62)</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['hexagon_pointfive'])">Hexagon (0.5)</a>
+				  </li>
+				  <li>
+					 <a href="#" onclick="load_preset(presets['hexagon_pointsixseven'])">Hexagon (0.67)</a>
+				  </li>
+
+
+				</ul>
+			 </div>
+			 <h3><a href="#">Hot Spots</a></h3>
+			 <div id="hot_spots">
+				
+			 </div>
+		  </div>
+		  
+		  
+		  
+		  
+		  
+		</td>
+	 </tr>
+	 
+	 
+  </tbody>
+</table>
+
+
+
+
+
+  
+
+  
+
+</div>
+  
+
+
+<br/>
+<button onclick="saveImage(document.getElementById('draw'))">save</button>
+<button onclick="Processing.getInstanceById('draw').clear()">clear</button>
+<button onclick="Processing.getInstanceById('draw').add_random_attractor()">add attractor</button>
+<button onclick="Processing.getInstanceById('draw').toggle_hot_spots()">toggle hot spots</button>
+<button onclick="Processing.getInstanceById('draw').stop_rendering()">stop</button>
+
+
+
+
+<table id="table_data">
+  <tbody>
+	 <tr>
+		<td>Mouse Mode:</td>
+		<td>
+		  <input name="mouse_mode" type="radio" id="input_mouse_mode_drag" checked="true" onclick="Processing.getInstanceById('draw').mouse_mode_drag();"><label for="input_mouse_mode_drag">Drag</label></input>
+		  <input name="mouse_mode" type="radio" id="input_mouse_mode_zoom_in" onclick="Processing.getInstanceById('draw').mouse_mode_zoom_in();"><label for="input_mouse_mode_zoom_in">Zoom In</label></input>
+		  <input name="mouse_mode" type="radio" id="input_mouse_mode_zoom_out" onclick="Processing.getInstanceById('draw').mouse_mode_zoom_out();"><label for="input_mouse_mode_zoom_out">Zoom Out</label></input>
+		  <input name="mouse_mode" type="radio" id="input_mouse_mode_rotate" onclick="Processing.getInstanceById('draw').mouse_mode_rotate();"><label for="input_mouse_mode_rotate">Rotate</label></input>
+		</td>
+		<td id="info_mouse">0</td>
+	 </tr>
+	 <tr>
+		<td>Detail:</td>
+		<td><div id="scroller_zoom" style="width: 500px; margin-left: 10px; margin-right: 10px;"></div></td>
+		<td id="info_zoom">0</td>
+	 </tr>
+	 <tr>
+		<td>Magnitude:</td>
+		<td><div id="scroller_magnitude" style="width: 500px; margin-left: 10px; margin-right: 10px;"></div></td>
+		<td id="info_magnitude">0</td>
+	 </tr>
+	 <tr>
+		<td>Rounds:</td>
+		<td><div id="scroller_rounds" style="width: 500px; margin-left: 10px; margin-right: 10px;"></div></td>
+		<td id="info_rounds">0</td>
+	 </tr>
+  </tbody>
+  
+</table>
+
+<div id="info_bookmark"></div>
+<div id="debug"></div>
+
+
+<script>
+  setup();
+</script>
+					
+			
+		</div>
+		
+	</div>
+	<!-- /.container -->
+
+
+
+
+
+</body>
+</html>

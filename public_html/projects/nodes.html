@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="description" content="Dimitri Tishchenko's personal page.">
+<meta name="author" content="Dimitri Tishchenko">
+
+
+<title>Dimitri Tishchenko - Descent Into Mathness</title>
+
+<!-- Bootstrap core CSS -->
+<link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Custom styles for this template -->
+<link href="/css/template.css" rel="stylesheet">
+
+<!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+<!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+
+
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+<style type="text/css">
+	.kineticjs-content{
+		border: 1px solid black;
+	}
+</style>
+
+</head>
+
+<body>
+
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed"
+					data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+					aria-controls="navbar">
+					<span class="sr-only">Toggle navigation</span> <span
+						class="icon-bar"></span> <span class="icon-bar"></span> <span
+						class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="/index.html">Dimitri Tishchenko</a>
+			</div>
+			<div id="navbar" class="collapse navbar-collapse">
+				<ul class="nav navbar-nav">
+					<li><a href="/index.html">Home</a></li>
+					<li class="active"><a href="/projects/index.html">Projects</a></li>
+					<li><a href="/blog/index.html">Blog</a></li>
+					<li><a href="/photography/index.html">Photography</a></li>
+					<li><a href="/contact/index.html">Contact</a></li>
+				</ul>
+			</div>
+			<!--/.nav-collapse -->
+		</div>
+	</nav>
+
+	<div class="container">
+		<div class="starter-template">
+			
+			<a href="/projects/index.html"
+					class="btn btn-primary">
+				<span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span> 
+				Back
+			</a>
+			
+			<h1>Node Diagram</h1>
+						
+			
+			<div class="modal fade" id="editor">
+	   		<div class="modal-dialog">
+	   			<div class="modal-content">
+	   				<div class="modal-header">
+	   					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+	   					<h4 class="modal-title" id="myModalLabel">Modal title</h4>
+	   				</div>
+	   				<div class="modal-body">
+	   				<form>
+
+							<div class="form-group">
+								<label for="editorInputTitle">Title</label>
+								<input class="form-control" id="editorInputTitle" />
+							</div>
+							<div class="form-group">
+								<label for="editorInputDate">Date</label>
+								<input class="form-control" type="date" id="editorInputDate"/>
+							</div>
+							<div class="form-group">
+								<label for="editorInputContent">Content</label>
+								<textarea class="form-control" id="editorInputContent" rows="20">
+									
+								</textarea>
+							</div>
+						</form>
+	   				</div>
+	   				<div class="modal-footer">
+	   					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	   					<button id="saveChangesButton" type="button" class="btn btn-primary" data-dismiss="modal">Save changes</button>
+	   				</div>
+	   			</div>
+	   		</div>
+
+	   	</div>
+
+   		
+	   	<input type="file" style="display:none;" id="fileDialog"/>
+		<div id="container"></div>
+
+
+
+		<script type="text/javascript" src="/js/kinetic-v5.1.0.min.js"></script> 
+		<script type="text/javascript" src="/js/jquery-2.1.1.min.js"></script> 
+		<script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="/js/jquery-dateFormat.min.js"></script>
+		
+		
+
+		<script type="text/javascript">
+
+			window.ondragover = function(e){
+				e.preventDefault(); 
+
+				// code will go here to indicate that you can drop stuff here
+
+				return false;
+			};
+			window.ondrop = function(e){
+				e.preventDefault(); 
+
+				for (var i = 0; i < e.dataTransfer.files.length; ++i) {
+					
+					addImage(e.dataTransfer.files[i].path, e.x, e.y);
+
+				}
+
+				return false;
+			};
+
+			function addImage(selectedPath, x, y){
+				var imageObject = new Image();
+
+				var image = new Kinetic.Image({
+					x: x,
+					y: y,
+					image: imageObject,
+					width: 200,
+					height: 200,
+					name: 'loadedImage',
+					draggable: true
+				});
+
+				imageObject.src = 'file:///' + selectedPath.split('\\').join('/');
+
+				imageObject.onload = function(){
+					layer.add(image);
+					layer.draw();
+				};
+			}
+
+			function chooseFile(){
+				$('#fileDialog')
+					.change(function(event){
+
+						addImage($(this).val(), 0, 0);
+
+						
+					})
+					.trigger('click');
+			}
+
+			chooseFile();
+
+
+			var ui = {
+			    stage: null,
+			    scale: 1,
+			    zoomFactor: 1.1,
+			    origin: {
+			        x: 0,
+			        y: 0
+			    },
+			    zoom: function(event) {
+			        event.preventDefault();
+
+			        var evt = event.originalEvent,
+			            mx = evt.clientX - ui.stage.getX(),
+			            my = evt.clientY - ui.stage.getY(),
+			            zoom = (ui.zoomFactor - (evt.wheelDelta < 0 ? 0.2 : 0)),
+			            newscale = ui.scale * zoom;
+			        
+
+
+			        ui.origin.x = mx / ui.scale + ui.origin.x - mx / newscale;
+			        ui.origin.y = my / ui.scale + ui.origin.y - my / newscale;
+
+			        ui.stage.setOffsetX(ui.origin.x);
+			        ui.stage.setOffsetY(ui.origin.y);
+			        ui.stage.setScaleX(newscale);
+			        ui.stage.setScaleY(newscale);
+			        ui.stage.draw();
+
+			        ui.scale *= zoom;
+
+			    },
+			    translate: function(x,y){
+					var pos = stage.getPosition();
+					var offset = stage.getOffset();
+					var scale = stage.getScale();
+					return {
+						x : ((x / scale.x) - (pos.x / scale.x) + offset.x),
+						y : ((y / scale.y) - (pos.y / scale.y) + offset.y)
+					};
+				
+			    },
+			    pointerPosition: function(){
+			    	var pointer = stage.getPointerPosition();
+			    	return this.translate (pointer.x, pointer.y);
+			    }
+			};
+
+			var nodes = [];
+			var connections = [];
+
+			var Connection = function(sourceNode, targetNode){
+				var line = new Kinetic.Line({
+					points: [0,0,0,0],
+					stroke: 'black',
+					strokeWidth: 1
+
+				});
+
+				layer.add(line);
+
+
+
+				var definition = {
+					sourceNode: sourceNode,
+					targetNode: targetNode,
+
+					update: function(){
+						
+
+
+
+						var p1x = sourceNode.x() + sourceNode.width()/2;
+						var p1y = sourceNode.y() + sourceNode.height()/2;
+
+						var p2x = targetNode.x() + targetNode.width()/2;	
+						var p2y = targetNode.y() + targetNode.height()/2;	
+
+						line.points([p1x,p1y,p2x,p2y]);
+
+						line.moveToBottom();
+					}
+
+				}
+
+				definition.update();
+
+				return definition;
+			};
+
+
+			var stage = new Kinetic.Stage({
+				container: 'container',
+				width: 1000,
+				height: 1000,
+				draggable: true
+			});
+
+			ui.stage = stage;
+			
+						
+			var fitStageToWindow = function(){
+				stage.width(window.innerWidth);
+				stage.height(window.innerHeight);
+			}
+			
+			$(window).on('resize', fitStageToWindow);
+			
+			$(function(){
+				fitStageToWindow();
+			})
+			
+
+			var layer = new Kinetic.Layer();
+			stage.add(layer);
+
+			// var listenerLayer = new Kinetic.Rect({
+			// 	stroke: 'black'
+			// });
+			// layer.add(listenerLayer);
+
+			// listenerLayer.on('dblclick', function(){
+			
+			// });
+
+
+			// var positionListenerLayer = function(){
+			
+			// 	listenerLayer.x(ui.origin.x);
+			// 	listenerLayer.y(ui.origin.y);
+			// 	listenerLayer.width(stage.width());
+			// 	listenerLayer.height(stage.height());
+			// 	listenerLayer.draw();
+			// };
+
+			// positionListenerLayer();
+
+			// stage.on('dragend', function(event){
+			// 	if (event.target.nodeType == 'Stage'){
+			// 		positionListenerLayer();
+			// 	}
+			// });
+
+			// var newLayer = new Kinetic.Rect({
+			// 	x: 0,
+			// 	y: 0,
+			// 	width: stage.width(),
+			// 	height: stage.height()
+			// });
+			// layer.add(newLayer);
+
+			// newLayer.on('dblclick', function(){
+			
+			// });
+			
+			var currentEditNode = null;
+
+			var editNode = function(textNode){
+				
+				$('#editor').modal()
+					.on('shown.bs.modal', function(){
+						$('#editorInputTitle').focus();
+					});
+				
+
+				
+
+				
+				$('#editorInputTitle').val(textNode.title());
+				$('#editorInputContent').val(textNode.description());
+				$('#editorInputDate').val(textNode.date());
+
+
+
+
+				currentEditNode = textNode;
+			}
+
+
+
+			$(stage.content).on('mousewheel DOMMouseScroll', ui.zoom);
+			
+			var nodeEdit = function(event){
+				var point = ui.translate(event.clientX, event.clientY);
+
+				
+
+				var n1 = addHealthEvent(point.x,point.y,'','', '#E2C6A5');
+				
+				editNode(n1);
+
+				layer.draw();
+			}
+
+			$(stage.content).off('dblclick.createNewNode').on('dblclick.createNewNode', nodeEdit);
+
+
+
+
+			function Container (){
+
+			}
+			
+			
+
+			$('#saveChangesButton').on('click', function(){
+				
+				currentEditNode.title($('#editorInputTitle').val());
+				currentEditNode.description($('#editorInputContent').val());
+
+				var inputValue = $('#editorInputDate').val();
+
+				currentEditNode.date(inputValue);
+				
+				
+				//console.log(currentEditNode.date($.format));
+
+				layer.draw();
+
+			});
+
+			/*
+			$('#editorInputTitle').on('keyup', function(){
+				$('#myModalLabel').html($('#editorInputTitle').val());	
+			});
+			*/
+			
+			var connectingNodes = false;
+			var currentConnectingNode = null;
+			
+			var connectingLine = new Kinetic.Line({
+				points: [0, 0, 0, 0],
+				stroke: 'black',
+				strokeWidth: 1
+			});
+
+			function abanondConnectingNodes(){
+				dimitri
+			}
+
+
+			var TextNode = function (){
+				var title = '';
+				var description = '';
+				var date = '';
+
+				var x = 0;
+				var y = 0;
+
+				var width = 200;
+
+				var connections = [];
+
+				var group = new Kinetic.Group({
+					draggable: true,
+					x: x,
+					y: y,
+					name: 'groupTextNode'
+				});
+				layer.add(group);
+
+
+
+				var rect = new Kinetic.Rect({
+					stroke: 'black',
+			 		strokeWidth: 1,
+					cornerRadius: 5,
+					width: width,
+					fill: 'white',
+					name: 'rectTextNode'
+			    });
+			    group.add(rect);
+
+			    var hoverRect = new Kinetic.Rect({
+			    	width: width
+			    });
+			    group.add(hoverRect);
+
+				var textTitle = new Kinetic.Text({
+					text: title,
+					fontSize: 20,
+					fill: 'black',
+					width: width,
+					padding: 6,
+					align: 'center',
+					name: 'textTextNodeTitle',
+					listening: false
+				});
+				group.add(textTitle);
+
+				var textDescription = new Kinetic.Text({
+					text: description,
+					fontSize: 16,
+					fontFamily: 'Calibri',
+					fill: 'black',
+					width: width,
+					padding: 6,
+					name: 'textTextNodeDescription',
+					listening: false
+				});
+				group.add(textDescription);
+
+				var connector = new Kinetic.Circle({
+					radius: 10,
+					stroke: 'black',
+					fill: '#EEEEEE'
+				});
+
+
+				
+
+				var definition = {
+					title: function(p){
+						if (p != undefined){
+							title = p;
+							
+							this.update();
+							return this;
+						}
+						return title;
+					},
+					description: function(p){
+						if (p != undefined){
+							description = p;
+							
+							this.update();
+							return this;
+						}
+						return description;
+					},
+					date: function(p){
+						if (p != undefined){
+							date = p;
+							
+							this.update();
+							return this;
+						}
+						return date;
+					},
+					move: function(tx,ty){
+
+						x = tx
+						y = ty
+
+						group.x(tx);
+						group.y(ty);
+
+						this.update();
+
+						return this;
+					},
+					width: function(p){
+						if (p){
+
+							p = Math.max(p, 100);
+
+							width = p;
+							this.update();
+							return this;
+						}
+						return width;
+					},
+					height: function(){
+						return rect.height();
+					},
+					x: function(){
+						return group.x();
+					},
+					y: function(p){
+						return group.y();
+					},
+					rect: function(){
+						return rect;
+					},
+					update: function(){
+
+						var titleComp = title;
+
+						if (date){
+							titleComp = '[' + $.format.date(new Date(date.split('-').join('/')), 'MMM d, yyyy') + '] ' + title;
+						}
+
+						textTitle.text(titleComp);
+						textDescription.text(description);
+
+						var descriptionHeight = textDescription.height();
+
+						if (!description){
+							descriptionHeight = 0;
+						}
+
+						rect.height(textTitle.height() + descriptionHeight);
+						textDescription.y(textTitle.height());
+
+						rect.width(width);
+						textTitle.width(width - 10);
+						textDescription.width(width - 10);
+
+						hoverRect.x(rect.x() - expansion);
+						hoverRect.y(rect.y() - expansion);
+
+						hoverRect.width(rect.width() + expansion*2);
+						hoverRect.height(rect.height() + expansion*2);
+
+						for (var i = 0; i < connections.length; i++){
+							var connection = connections[i];
+							connection.update();
+						}
+
+					},
+					connections: function(){
+						return connections;
+					},
+					connect: function(other){
+
+						var connection = new Connection(definition, other);
+
+						connections.push(connection);
+						other.connections().push(connection);
+
+						return this;
+						
+					}
+				};
+
+
+				var interactionMode = 'default';
+				var resizePoint = null;
+				var overResizeArea = false;
+				var initialWidth = 0;
+
+				function abandonResize(){
+					document.body.style.cursor = 'default';	
+					group.draggable(true);
+					stage.draggable(true);
+					overResizeArea = false;
+					interactionMode = 'default';
+				}
+
+				function abandonConnectingNodes(){
+					connectingLine.remove();
+
+				 	rect.setStrokeWidth(1);
+
+				 	if (currentConnectingNode){
+						currentConnectingNode.rect().setStrokeWidth(1);
+						definition.connect(currentConnectingNode);
+						currentConnectingNode = null;
+					}
+
+					
+
+				 	connectingNodes = false;
+				 	
+
+				 	layer.draw();
+				 	stage.off('contentMousemove.connectingNodes');
+				 	stage.off('contentClick.connectingNodes');
+				}
+
+				group
+					.on('dragmove', function(){
+
+						for (var i = 0; i < connections.length; i++){
+							var connection = connections[i];
+							connection.update();
+						}
+						layer.batchDraw();
+
+					})
+					.on('dblclick', function(event){
+						editNode(definition);
+
+						abandonConnectingNodes();
+					});
+
+
+				group
+					.on('mousemove', function(event){
+						
+						var pointerPosition = ui.pointerPosition();
+						if (pointerPosition.x >= (group.x() + rect.width() - 10)){
+							document.body.style.cursor = 'e-resize';
+							group.draggable(false);
+							stage.draggable(false);
+							overResizeArea = true;
+						}
+						else{
+							if (interactionMode != 'resizing'){
+								abandonResize();	
+							}
+							
+						}	
+					})
+					.on('mouseout', function(event){
+						if (interactionMode != 'resizing'){
+							
+							$(stage.content).off('dblclick.createNewNode').on('dblclick.createNewNode', nodeEdit);
+							abandonResize();
+
+						}
+					})
+					.on('mousedown', function(){
+						resizePoint = ui.pointerPosition();
+						if (overResizeArea){
+							interactionMode = 'resizing';
+							initialWidth = rect.width();
+
+							abandonConnectingNodes();
+						}
+
+						if (interactionMode == 'resizing'){
+
+							var content = $(stage.content);
+
+							var mouseMoveHandler = content.on('mousemove.textNodeResize', function(){
+								var pointerPosition = ui.pointerPosition();
+
+								var differential = pointerPosition.x - resizePoint.x;
+								
+								definition.width(initialWidth + differential);
+
+								for (var i = 0; i < connections.length; i++){
+									var connection = connections[i];
+									connection.update();
+								}
+								layer.batchDraw();
+
+
+								
+							});
+
+							var mouseUpHandler = content.on('mouseup.textNodeResize', function(){
+
+								abandonResize();
+								abandonConnectingNodes();
+
+								content.off('mousemove.textNodeResize');
+								content.off('mouseup.textNodeResize');
+
+							});
+						}
+
+					})
+					;
+
+				var expansion = 15;
+
+				group
+				    .on('mouseover', function(event) {
+
+						rect.setStrokeWidth(3);
+						$(stage.content).off('dblclick.createNewNode');
+
+						layer.draw();	
+
+
+					
+					})
+					.on('mouseout', function(event) {
+						rect.setStrokeWidth(1);
+						$(stage.content).off('dblclick.createNewNode').on('dblclick.createNewNode', nodeEdit);
+
+						
+
+
+						if (connectingNodes){
+							rect.setStrokeWidth(3);
+
+							if (currentConnectingNode != definition){
+								rect.setStrokeWidth(1);
+							}
+
+							stage.on('contentClick.connectingNodes', function(e){
+
+							 	
+							 	abandonConnectingNodes();
+
+							});	
+						}
+
+						layer.draw();
+					});
+
+				group.on('click', function(event){
+
+					var cx = group.x() + rect.width()/2;
+					var cy = group.y() + rect.height()/2;
+					
+					layer.add(connectingLine);
+					connectingLine.moveToBottom();
+
+					layer.draw();
+
+					connectingNodes = true;
+					currentConnectingNode = definition;
+
+					stage.on('contentMousemove.connectingNodes', function(){
+						var pointer = ui.pointerPosition();	
+						connectingLine.points([cx, cy, pointer.x, pointer.y]);
+
+						layer.batchDraw();
+					});
+
+
+				});
+
+				return definition;
+			}
+
+			
+
+
+
+
+			function addHealthEvent(x, y, title, description, color) {
+
+				return new TextNode()
+					.title(title)
+					.description(description)
+					.move(x,y);
+
+			}
+
+			var n1 = addHealthEvent(400,400,'Sample Patient','Born: Jan 1, 1980\n\nSince: November 26, 2006', '#E2C6A5');
+			var n2 = addHealthEvent(600,200,'Current Medications','', '#E2C6A5');
+			var n3 = addHealthEvent(200,200,'Family','', '#E2C6A5');
+
+			var n4 = addHealthEvent(100,300,'Child: Billy Patient','Born: Jan 3, 2013\n\nPerhaps a link to another chart would be possible here.', '#E2C6A5');
+			var n5 = addHealthEvent(200,50,'Spouse: Samplina Patient','Born: Jan 2, 1980', '#E2C6A5');
+
+
+			var n6 = addHealthEvent(900,50,'SamplePlex','Started: Jan 4, 2004\n\nExpires: Jan 4, 2006,','', '#E2C6A5');
+			var n7 = addHealthEvent(900,200,'SampleSol','Started: Jan 4, 2004\n\nExpires: Jan 4, 2006,','', '#E2C6A5');
+			
+
+			var n8 = addHealthEvent(600,600,'Referrals','', '#E2C6A5');
+
+			var n9 = addHealthEvent(900,600,'Samplecologist','Referred on: Jan 8, 2006', '#E2C6A5');
+
+			var n10 = addHealthEvent(1150,600,'Result','Link to PDF.  Perhaps the pdf could be display right here.', '#E2C6A5');
+
+			n1.connect(n2).connect(n3).connect(n8);
+			n3.connect(n4);
+			n3.connect(n5)
+			n2.connect(n6).connect(n7);
+			n8.connect(n9);
+			n9.connect(n10);
+
+
+      </script>
+			
+		</div>
+		
+	</div>
+	<!-- /.container -->
+
+
+	<!-- Bootstrap core JavaScript
+    ================================================== -->
+	<!-- Placed at the end of the document so the pages load faster -->
+	<script
+		src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<script src="/bootstrap/js/bootstrap.min.js"></script>
+
+
+
+</body>
+</html>

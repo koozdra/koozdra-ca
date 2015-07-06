@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="description" content="Dimitri Tishchenko's personal page.">
+<meta name="author" content="Dimitri Tishchenko">
+
+
+<title>Dimitri Tishchenko - Descent Into Mathness</title>
+
+<!-- Bootstrap core CSS -->
+<link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Custom styles for this template -->
+<link href="/css/template.css" rel="stylesheet">
+
+<!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+<!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+
+
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+<style type="text/css">
+	.kineticjs-content{
+		border: 1px solid black;
+	}
+</style>
+
+<script type="text/javascript" src="../lib/drawer.js"></script>
+<script
+		src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<script src="/bootstrap/js/bootstrap.min.js"></script>
+</head>
+
+<body >
+
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed"
+					data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+					aria-controls="navbar">
+					<span class="sr-only">Toggle navigation</span> <span
+						class="icon-bar"></span> <span class="icon-bar"></span> <span
+						class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="/index.html">Dimitri Tishchenko</a>
+			</div>
+			<div id="navbar" class="collapse navbar-collapse">
+				<ul class="nav navbar-nav">
+					<li><a href="/index.html">Home</a></li>
+					<li class="active"><a href="/projects/index.html">Projects</a></li>
+					<li><a href="/blog/index.html">Blog</a></li>
+					<li><a href="/photography/index.html">Photography</a></li>
+					<li><a href="/contact/index.html">Contact</a></li>
+				</ul>
+			</div>
+			<!--/.nav-collapse -->
+		</div>
+	</nav>
+
+	<div class="container">
+		<div class="starter-template container-fluid">
+			
+			<a href="/projects/index.html"
+					class="btn btn-primary">
+				<span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span> 
+				Back
+			</a>
+			
+			<h1>Chaos Game Path Plotter</h1>
+			
+			<canvas height="500" width="1200" id="draw" style="border: 1px solid black;" class="img-responsive"></canvas>
+            
+	       <br/>
+            
+            
+            <div class="row">
+                <div class="col-md-4">
+                    
+                    <h2>
+                        <span class="h2">Range</span>
+                    </h2>
+                    
+                    <div class="row">
+                        
+                        <div class="col-md-2">
+                            Triangle
+                        </div>
+                        
+                        <div class="col-md-10">
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:3, radius:250, mag_min: 0.4, mag_max: 1});"
+                                    >
+                                Inner
+                            </button>
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:3, radius:100, mag_min: 1, mag_max: 1.7}); "
+                                    >
+                                Outer
+                            </button>
+                        </div>
+                    </div>
+                    <br/>
+                    <div class="row">
+                        <div class="col-md-2">
+                            Square
+                        </div>
+                        <div class="col-md-10">
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:4, radius:250, mag_min: 0.5, mag_max: 1});"
+                                    >
+                                Inner
+                            </button>
+                        
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:4, radius:100, mag_min: 1, mag_max: 1.6}); "
+                                    >
+                                Outer
+                            </button>
+                        </div>
+                    </div>
+                    <br/>
+                    <div class="row">
+                        <div class="col-md-2">
+                            Pentagon
+                        </div>
+                        <div class="col-md-10">
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:5, radius:250, mag_min: 0.45, mag_max: 1});"
+                                    >
+                                Inner
+                            </button>
+                        
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:5, radius:100, mag_min: 1, mag_max: 1.6}); "
+                                    >
+                                Outer
+                            </button>
+                        </div>
+                    </div>
+                    <br/>
+                    <div class="row">
+                        <div class="col-md-2">
+                            Hexagon
+                        </div>
+                        <div class="col-md-10">
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:6, radius:250, mag_min: 0.45, mag_max: 1});"
+                                    >
+                                Inner
+                            </button>
+                        
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:6, radius:100, mag_min: 1, mag_max: 1.6}); "
+                                    >
+                                Outer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                     <h2>
+                        <span class="h2">Fixed Outer</span>
+                    </h2>
+                    
+                    <div class="row">
+                        
+                        <div class="col-md-2">
+                            Triangle
+                        </div>
+                        
+                        <div class="col-md-10">
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:3, radius:100, mag_min: 1.618, mag_max: 1.618, max_iterations: 2000});"
+                                    >
+                                1.618
+                            </button>
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:3, radius:100, mag_min: 1.5, mag_max: 1.5, max_iterations: 2000});"
+                                    >
+                                1.5
+                            </button>
+                        </div>
+                    </div>
+                    <br/>
+                    <div class="row">
+                        <div class="col-md-2">
+                            Square
+                        </div>
+                        
+                        <div class="col-md-10">
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:4, radius:100, mag_min: 1.618, mag_max: 1.618, max_iterations: 2000});"
+                                    >
+                                1.618
+                            </button>
+                        </div>
+                        
+                    </div>
+                    <br/>
+                    <div class="row">
+                        <div class="col-md-2">
+                            Pentagon
+                        </div>
+                        
+                        <div class="col-md-10">
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:5, radius:100, mag_min: 1.38, mag_max: 1.38, max_iterations: 2000});"
+                                    >
+                                1.38
+                            </button>
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:5, radius:100, mag_min: 1.5, mag_max: 1.5, max_iterations: 2000});"
+                                    >
+                                1.5
+                            </button>
+                        </div>
+                        
+                        
+                    </div>
+                    <br/>
+                    <div class="row">
+                        <div class="col-md-2">
+                            Hexagon
+                        </div>
+                        
+                        <div class="col-md-10">
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:6, radius:100, mag_min: 1.5, mag_max: 1.5, max_iterations: 2000});"
+                                    >
+                                1.5
+                            </button>
+                        </div>
+                        
+                    </div>
+                </div>
+               <div class="col-md-4">
+                   
+                    
+                    <h2>
+                        <span class="h2">Fixed Inner</span>
+                    </h2>
+                    
+                    <div class="row">
+                        
+                        <div class="col-md-2">
+                            Triangle
+                        </div>
+                        
+                        <div class="col-md-10">
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:3, radius:250, mag_min: 0.5, mag_max: 0.5, max_iterations: 2000});"
+                                    >
+                                0.5
+                            </button>
+                        </div>
+                    </div>
+                    <br/>
+                    <div class="row">
+                        
+                        <div class="col-md-2">
+                            Square
+                        </div>
+                        
+                        <div class="col-md-10">
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:4, radius:250, mag_min: 0.51, mag_max: 0.51, max_iterations: 2000});"
+                                    >
+                                0.51
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <br/>
+                    <div class="row">
+                        
+                        <div class="col-md-2">
+                            Pentagon
+                        </div>
+                        
+                        <div class="col-md-10">
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:5, radius:250, mag_min: 0.62, mag_max: 0.62, max_iterations: 2000});"
+                                    >
+                                0.62
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <br/>
+                    <div class="row">
+                        
+                        <div class="col-md-2">
+                            Hexagon
+                        </div>
+                        
+                        <div class="col-md-10">
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:6, radius:250, mag_min: 0.5, mag_max: 0.5, max_iterations: 2000});"
+                                    >
+                                0.5
+                            </button>
+                        
+                            <button class="btn btn-primary"
+                                    onclick="navigate({points:6, radius:250, mag_min: 0.67, mag_max: 0.67, max_iterations: 2000});"
+                                    >
+                                0.67
+                            </button>
+                        </div>
+                    </div>
+                    
+                   
+                    
+                </div>
+            </div>
+            
+            <br/><br/>
+			<div>
+                <h2>Image Gallery</h2>
+                <a href="https://www.flickr.com/photos/38565795@N05/sets/72157628959372467">High Resolution Renders</a>
+            </div>
+		</div>
+		
+	</div>
+	<!-- /.container -->
+
+    <script>
+        function getURLParameter(name) {
+            return decodeURI(
+                (RegExp(name + '=' + '(.+?)(&|$)').exec(location.search)||[,null])[1]
+            );
+        }
+        
+        
+        var preset = getURLParameter('data');
+        
+        
+        
+        if (preset == 'null') {
+            render({points:5, radius:100, mag_min: 1, mag_max: 1.6});
+        }
+        else{
+            render(jQuery.parseJSON(preset));
+            
+        }
+        
+       
+        
+    function render(preset){
+        var draw = new Draw($('#draw')[0]);
+        
+        preset.max_iterations = preset.max_iterations || 4;
+        
+        function Points(){
+            var points = [];
+
+            this.points = points;
+
+            this.add = function(p){
+              points.push(p);
+            }
+
+            this.draw = function(){
+              $a(points).each(function(p){
+                 draw.color(draw.named_color('blue').rgb()).circle(p,2);
+              });
+            }
+
+            this.sample = function(){
+              return $a(points).sample();
+            }
+
+         }
+        
+        //draw.clear_all();
+        
+        draw.color(draw.named_color('white').rgb()).fill().rectangle($p(-draw.width()/2,-draw.height()/2),$p(draw.width()/2,draw.height()/2));
+        
+        var points = new Points(); 
+
+        var quality = 0.1;
+
+        $a(draw.circle_points(preset.points, draw.origin(), preset.radius/quality, Math.PI/2)).each(function(p){
+            points.add(p);
+        });
+        
+      
+
+    //	 $a(draw.circle_points(5, draw.origin(), 500/quality, Math.PI/2 + Math.PI/5)).each(function(p){
+    //		points.add(p);
+    //	 });
+
+    //	 points.add(draw.origin());
+
+    //	 var m = 10;
+    //	 
+    //	 points.add(draw.points().top_left().scale(m));
+    //	 points.add(draw.points().top_right().scale(m));
+    //	 points.add(draw.points().bottom_right().scale(m));
+    //	 points.add(draw.points().bottom_left().scale(m));
+
+         points.draw();
+
+
+         var curr_point = draw.origin();
+         var mag_step = 0.002;
+
+         var mag_start = preset.mag_min;
+         var mag_end = preset.mag_max;
+
+         var mag = mag_start;
+
+        var iterations = 0;
+
+         draw.context.scale(quality,quality);
+
+
+         draw.color(draw.named_color('black').rgb());
+        
+        
+         draw.animate_while(function(){
+            
+
+            var draw_points = 3000;
+            var furthest = Math.max(Math.abs(mag_end-1),Math.abs(mag_start-1));
+            var dist = Math.abs(mag-1)
+            draw_points *= dist/furthest;
+
+            draw.times(draw_points,function(){
+              var rand_point = points.sample();
+
+              curr_point = $p(curr_point.x + (rand_point.x - curr_point.x) * mag, curr_point.y + (rand_point.y - curr_point.y) * mag);
+
+
+              draw.point(curr_point);
+            });
+
+            mag += mag_step;
+
+            if (mag > mag_end){
+              mag = mag_start;
+                iterations += 1;
+            }
+             
+         },
+        function(){
+             return iterations < preset.max_iterations;
+         });
+    }
+        
+    
+        
+    function navigate(data){
+        window.location.href = "chaos.html?data=" + JSON.stringify(data);
+    }
+	 
+	 
+	 
+  </script>
+
+
+
+</body>
+</html>
