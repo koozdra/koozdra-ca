@@ -1,5 +1,5 @@
 # Site
 Personal website contents.
 
-[koozdra.ca](koozdra.ca "Peronal Website")
+[koozdra.ca](http://koozdra.ca "Peronal Website")
 
