@@ -22,19 +22,17 @@ var svg,
   ]
 };
 
-function moveSnake(index, x, y) {
+var moveSnake = _.curry(function(x, y, index) {
   var snake = data.snakes[index],
     head = _.head(snake.bits);
 
-  snake.bits = [[head[0] + x, head[1] + y]].concat(_.initial(snake.bits))
-}
+  snake.bits = [[head[0] + x, head[1] + y]].concat(_.initial(snake.bits));
+});
 
-var moveSnakeUp = _.partialRight(moveSnake, 0, -1);
-var moveSnakeDown = _.partialRight(moveSnake, 0, 1);
-var moveSnakeRight = _.partialRight(moveSnake, 1, 0);
-var moveSnakeLeft = _.partialRight(moveSnake, -1, 0);
-
-
+var moveSnakeUp = moveSnake(0, -1);
+var moveSnakeDown = moveSnake(0, 1);
+var moveSnakeRight = moveSnake(1, 0);
+var moveSnakeLeft = moveSnake(-1, 0);
 
 function up() {
   moveSnakeUp(1);
