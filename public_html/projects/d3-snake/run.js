@@ -104,16 +104,6 @@ function render(data) {
 
   snakeBits.exit().remove();
 
-  //svg.selectAll('.food')
-  //  .data(data.food)
-  //  .enter()
-  //  .append('circle')
-  //  .classed('food', true)
-  //  .attr('cx', function(d) { return d[0] * bitWidth + bitWidth/2})
-  //  .attr('cy', function(d) { return d[1] * bitWidth + bitWidth/2})
-  //  .attr('r', bitWidth/2)
-  //  .attr('fill', 'green');
-
   svg.selectAll('.food')
     .data(data.food)
     .enter()
