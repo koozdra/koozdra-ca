@@ -12,8 +12,6 @@
 
   <title>Dimitri Tishchenko - Descent Into Mathness</title>
 
-  <!-- Bootstrap core CSS -->
-  <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 
   <!-- Custom styles for this template -->
   <link href="/css/template.css" rel="stylesheet">
@@ -25,7 +23,7 @@
   <![endif]-->
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-  <script src="/bootstrap/js/bootstrap.min.js"></script>
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.9/d3.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.min.js"></script>
@@ -67,9 +65,9 @@
       Back
     </a>
   </div>
-
+  <br/><br/><br/><br/><br/>
   <div class="text-center">
-    <canvas id="board" width="140" height="90"></canvas>
+    <canvas id="board" width="140" height="90" style="border: 1px solid"></canvas>
   </div>
 
   <div class="js-controls">
@@ -90,56 +88,17 @@
     Location:
     <span class="currentLocation"></span>
   </div>
+  <div>
+    Size:
+    <div class="radio">
+      <label><input type="radio" name="size" onclick="sizeXSmall();" checked>Extra Small</label>
+    </div>
+    <div class="radio">
+      <label><input type="radio" name="size" onclick="sizeSmall();">Small</label>
+    </div>
+
+  </div>
 </div>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-<!--<html>-->
-<!--<head>-->
-  <!--<meta charset="utf-8">-->
-  <!--<meta http-equiv="X-UA-Compatible" content="IE=edge">-->
-  <!--<meta name="viewport" content="width=device-width, initial-scale=1">-->
-
-  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.9/d3.min.js"></script>-->
-  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.min.js"></script>-->
-  <!--<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css">-->
-  <!--<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap-theme.min.css">-->
-
-  <!--<script src="run.js" defer></script>-->
-<!--</head>-->
-<!--<body>-->
-  <!--<div class="container">-->
-    <!--test-->
-  <!--</div>-->
-
-  <!--some text-->
-  <!--<br/>-->
-  <!--<canvas id="board" width="140" height="90"></canvas>-->
-
-  <!--<div class="js-controls">-->
-    <!--<div>-->
-      <!--<div class="radio">-->
-        <!--<label><input type="radio" name="clickMode" onclick="clickModeZoomIn();" checked>Zoom In</label>-->
-      <!--</div>-->
-      <!--<div class="radio">-->
-        <!--<label><input type="radio" name="clickMode" onclick="clickModeZoomOut();">Zoom Out</label>-->
-      <!--</div>-->
-      <!--<div class="radio">-->
-        <!--<label><input type="radio" name="clickMode" onclick="clickModeCenter();">Center</label>-->
-      <!--</div>-->
-    <!--</div>-->
-  <!--</div>-->
-
-  <!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>-->
-  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js" defer></script>-->
-<!--</body>-->
-<!--</html>-->

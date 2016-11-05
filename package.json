@@ -1,0 +1,26 @@
+{
+  "name": "koozdra.ca",
+  "version": "1.0.0",
+  "description": "Personal website",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "node ./deploy/deploy.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koozdra/koozdra.ca.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/koozdra/koozdra.ca/issues"
+  },
+  "homepage": "https://github.com/koozdra/koozdra.ca#readme",
+  "dependencies": {
+    "bluebird": "^3.4.6",
+    "globby": "^6.1.0",
+    "lodash": "^4.16.6",
+    "promise-ftp": "^1.3.2"
+  }
+}

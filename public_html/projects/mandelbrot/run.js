@@ -1,7 +1,4 @@
-//var _ = require('lodash');
-
 // Types ---------------------------------------------
-
 function Point(x, y) {
   return {
     x: x,
@@ -24,7 +21,6 @@ function Color(r, g, b, a) {
     a: a
   }
 }
-
 // Types ---------------------------------------------
 
 function colorRangeAt(c1, c2, z) {
@@ -36,45 +32,51 @@ function colorRangeAt(c1, c2, z) {
   );
 }
 
-var Colors = {
+const Colors = {
   black: Color(0, 0, 0, 255),
   white: Color(255, 255, 255, 255)
 };
 
+function setUpCanvas(ctx, canvas) {
+  // messy canvas crap
+  if (window.devicePixelRatio > 1) {
+
+    setUpCanvasDimensions(canvas);
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  }
+  //------------------------------------------------
+}
+
+function setUpCanvasDimensions(canvas) {
+  const canvasWidth = canvas.width;
+  const canvasHeight = canvas.height;
+
+  canvas.width = canvasWidth * window.devicePixelRatio;
+  canvas.height = canvasHeight * window.devicePixelRatio;
+  canvas.style.width = canvasWidth + 'px';
+  canvas.style.height = canvasHeight + 'px';
+}
+
 
 function initialState(canvas) {
   var ctx = canvas.getContext('2d'),
-    ctxScale = 1;
-
-  console.log(window.devicePixelRatio, canvas.width)
-
-  // messy canvas crap
-  if (window.devicePixelRatio > 1) {
-    var canvasWidth = canvas.width;
-    var canvasHeight = canvas.height;
-
-    canvas.width = canvasWidth * window.devicePixelRatio;
-    canvas.height = canvasHeight * window.devicePixelRatio;
-    canvas.style.width = canvasWidth + 'px';
-    canvas.style.height = canvasHeight + 'px';
-
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     ctxScale = window.devicePixelRatio;
-  }
-  //------------------------------------------------
+
+  setUpCanvas(ctx, canvas);
 
   var width = canvas.width,
     height = canvas.height,
     bufferRow = ctx.createImageData(width, 1);
 
   return {
-    bufferPixel: ctx.createImageData(1, 1),
-    bufferRow: bufferRow,
+    bufferRow,
+    ctx,
+    canvas,
+    ctxScale,
+    width,
+    height,
     bufferRowData: bufferRow.data,
-    ctx: ctx,
-    ctxScale: ctxScale,
-    width: width,
-    height: height,
+    bufferPixel: ctx.createImageData(1, 1),
     viewPort: ViewPort(Point(-width / 2, height / 2), Point(width / 2, -height / 2)),
     rank: {
       timeout: 10000,
@@ -90,7 +92,7 @@ function initialState(canvas) {
   };
 }
 
-function mandelbrotRank (state, point) {
+function mandelbrotRank(state, point) {
   var i = 0,
     zx = point.x,
     zy = point.y;
@@ -126,8 +128,6 @@ function currySpread(arr, fn) {
   return fn;
 }
 
-
-
 var i = 0
 function rankColor(state, point) {
   var rank = mandelbrotRank(state, point);
@@ -149,9 +149,8 @@ function drawRow(state, y) {
     ctxRowData = ctxRow.data;
 
   drawRow = function(state, y) {
-
-    if (state.width != ctxRow.width) {
-      ctxRow = ctx.createImageData(state.width, 1);
+    if (state.canvas.width != ctxRow.width) {
+      ctxRow = state.ctx.createImageData(state.canvas.width, 1);
       ctxRowData = ctxRow.data;
     }
 
@@ -174,23 +173,21 @@ function drawRow(state, y) {
 }
 
 function drawByRow(state) {
+  state.renderState = {
+    y: 0
+  }
 
-  function drawByRowInner(state, renderState) {
+  function drawByRowInner(state) {
+    const renderState = state.renderState;
     drawRow(state, renderState.y);
-    if (renderState.y < state.height - 1 && renderState.active) {
+
+    if (renderState.y < state.height - 1) {
       renderState.y += 1;
-      requestAnimationFrame(_.partial(drawByRowInner, state, renderState));
+      requestAnimationFrame(_.partial(drawByRowInner, state));
     }
   }
 
-  var renderState = {
-    y: 0,
-    active: true
-  };
-
-  requestAnimationFrame(_.partial(drawByRowInner, state, renderState));
-
-  return renderState;
+  requestAnimationFrame(_.partial(drawByRowInner, state))
 }
 
 function mapIntoViewPort(state, point, viewPort) {
@@ -255,17 +252,23 @@ function transition(state) {
     return state;
   });
 
-  //var setMouseClickZoomIn = _()
+  var changeViewWindowSize = _.curry(function(state, width, height) {
+
+  });
 
   return {
     centerZoomViewPort: centerZoomViewPort(state),
     centerViewPortAt: centerViewPortAt(state),
+    changeViewWindowSize: changeViewWindowSize(state),
     state: function() { return state; }
   }
 };
 
 function clear(state){
-  state.ctx.clearRect(0, 0, state.width, state.height);
+  function clearInner(state) {
+    state.ctx.clearRect(0, 0, state.width, state.height)
+  }
+  requestAnimationFrame(_.partial(clearInner, state));
 }
 
 function start(){
@@ -273,11 +276,11 @@ function start(){
     state = initialState(canvas);
 
   d3.select(canvas).on('click', function(e) {
-    if (state.renderState) {
-      state.renderState.active = false;
-    }
+    // if (state.renderState) {
+    //   state.renderState.active = false;
+    // }
 
-    requestAnimationFrame(_.partial(clear, state));
+    clear(state);
 
     var mouse = d3.mouse(this),
       point = Point(mouse[0] * state.ctxScale, mouse[1] * state.ctxScale);
@@ -290,30 +293,29 @@ function start(){
       state = transition(state).centerZoomViewPort(1.7);
     }
 
-    state.renderState = drawByRow(state);
+
 
     d3.select('span.currentLocation').html('test');
 
-    var br = state.viewPort.br,
-      tl = state.viewPort.tl;
-
-    console.log(state.viewPort, JSON.stringify({
-      x: tl.x + (br.x - tl.x) / 2,
-      y: tl.y + (br.y - tl.y) / 2,
-      z: state.viewPort.zoom
-    }))
+    drawByRow(state);
 
   });
 
   state = transition(state).centerZoomViewPort(0.02);
 
-  state.renderState = drawByRow(state);
+
+  //state.viewPort = JSON.parse('{"tl":{"x":-1.7499333634530672,"y":7.200756595495622e-10},"br":{"x":-1.749933362802201,"y":3.0166153142956183e-10}}')
+
+
+  drawByRow(state);
 
   return state;
 }
 
 
 var state = start();
+
+console.log(state);
 
 function clickModeZoomIn() {
   state.interactions.click = 'zoomIn';
@@ -325,4 +327,23 @@ function clickModeZoomOut() {
 
 function clickModeCenter() {
   state.interactions.click = 'center';
+}
+
+function sizeXSmall() {
+  state.width = 560;
+  state.height = 360;
+
+  setUpCanvasDimensions(state.canvas);
+
+  clear(state);
+  drawByRow(state);
+}
+
+function sizeSmall() {
+  state.width = 1120;
+  state.height = 720;
+
+  setUpCanvasDimensions(state.canvas);
+  clear(state);
+  drawByRow(state);
 }
