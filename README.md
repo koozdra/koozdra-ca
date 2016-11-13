@@ -5,6 +5,7 @@ Personal website contents.
 
 ## setup
 create a `deploy/config.json` with ftp information.
+
 `npm install`
 
 ## deploy

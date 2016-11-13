@@ -59,14 +59,16 @@ function setUpCanvasDimensions(canvas) {
 
 
 function initialState(canvas) {
-  var ctx = canvas.getContext('2d'),
-    ctxScale = window.devicePixelRatio;
+  const ctx = canvas.getContext('2d');
+  const ctxScale = window.devicePixelRatio;
 
   setUpCanvas(ctx, canvas);
 
-  var width = canvas.width,
-    height = canvas.height,
-    bufferRow = ctx.createImageData(width, 1);
+  const width = canvas.width;
+  const height = canvas.height;
+  const bufferRow = ctx.createImageData(width, 1);
+
+
 
   return {
     bufferRow,
@@ -123,12 +125,6 @@ function rangeAt(a, b, x) {
   return a + (b - a) * x;
 }
 
-function currySpread(arr, fn) {
-  _.each(arr, fn);
-  return fn;
-}
-
-var i = 0
 function rankColor(state, point) {
   var rank = mandelbrotRank(state, point);
 
@@ -272,8 +268,8 @@ function clear(state){
 }
 
 function start(){
-  var canvas = document.getElementById('board'),
-    state = initialState(canvas);
+  const canvas = document.getElementById('board');
+  let state = initialState(canvas);
 
   d3.select(canvas).on('click', function(e) {
     // if (state.renderState) {
@@ -282,8 +278,8 @@ function start(){
 
     clear(state);
 
-    var mouse = d3.mouse(this),
-      point = Point(mouse[0] * state.ctxScale, mouse[1] * state.ctxScale);
+    const mouse = d3.mouse(this);
+    const point = Point(mouse[0] * state.ctxScale, mouse[1] * state.ctxScale);
 
     state = transition(state).centerViewPortAt(point);
 
@@ -330,8 +326,8 @@ function clickModeCenter() {
 }
 
 function sizeXSmall() {
-  state.width = 560;
-  state.height = 360;
+  state.width = 140;
+  state.height = 90;
 
   setUpCanvasDimensions(state.canvas);
 
@@ -340,10 +336,19 @@ function sizeXSmall() {
 }
 
 function sizeSmall() {
-  state.width = 1120;
-  state.height = 720;
+  state.width = 280;
+  state.height = 180;
 
   setUpCanvasDimensions(state.canvas);
+  clear(state);
+  drawByRow(state);
+}
+
+function sizeLarge() {
+  state.width = 280 * 4;
+  state.height = 180 * 4;
+
+  setUpCanvasDimensions(state.canvas, state.width, state.height);
   clear(state);
   drawByRow(state);
 }
