@@ -66,42 +66,62 @@
       Back
     </a>
   </div>
-  <br/><br/><br/><br/><br/>
   <div class="text-center">
     <canvas id="board" width="140" height="90" style="border: 1px solid"></canvas>
   </div>
 
-  <div class="js-controls">
-    Click Mode:
-    <div>
-    <div class="radio">
-      <label><input type="radio" name="clickMode" onclick="clickModeZoomIn();" checked>Zoom In</label>
-      </div>
+  <div class="row">
+    <div class="col-md-2">
+      <strong>Click Mode:</strong>
+      <div>
       <div class="radio">
-      <label><input type="radio" name="clickMode" onclick="clickModeZoomOut();">Zoom Out</label>
+        <label><input type="radio" name="clickMode" onclick="clickModeZoomIn();" checked>Zoom In</label>
+        </div>
+        <div class="radio">
+        <label><input type="radio" name="clickMode" onclick="clickModeZoomOut();">Zoom Out</label>
+        </div>
+        <div class="radio">
+        <label><input type="radio" name="clickMode" onclick="clickModeCenter();">Center</label>
+        </div>
       </div>
-      <div class="radio">
-      <label><input type="radio" name="clickMode" onclick="clickModeCenter();">Center</label>
-      </div>
-    </div>
-  </div>
-  <div>
-    Location:
-    <span class="currentLocation"></span>
-  </div>
-  <div>
-    Size:
-    <div class="radio">
-      <label><input type="radio" name="size" onclick="sizeXSmall();" checked>Extra Small</label>
-    </div>
-    <div class="radio">
-      <label><input type="radio" name="size" onclick="sizeSmall();">Small</label>
-    </div>
-    <div class="radio">
-      <label><input type="radio" name="size" onclick="sizeLarge();">Large</label>
     </div>
 
+    <div class="col-md-2">
+      <strong>Size:</strong>
+      <div class="radio">
+        <label><input type="radio" name="size" onclick="sizeXSmall();" checked>Extra Small</label>
+      </div>
+      <div class="radio">
+        <label><input type="radio" name="size" onclick="sizeSmall();">Small</label>
+      </div>
+      <div class="radio">
+        <label><input type="radio" name="size" onclick="sizeMedium();">Medium</label>
+      </div>
+      <div class="radio">
+        <label><input type="radio" name="size" onclick="sizeLarge();">Large</label>
+      </div>
+      <div class="radio">
+        <label><input type="radio" name="size" onclick="sizeFull();">Full</label>
+      </div>
+    </div>
   </div>
+
+
+  <div>
+    <strong>Location:</strong>
+    <span class="currentLocation"></span>
+  </div>
+
+  <div>
+    <strong>Output:</strong><br/>
+    <button class="btn" onclick="generateImage();">Generate Image</button>
+  </div>
+
+  <div class="imageOutput">
+    <br/><br/>
+
+  </div>
+
 </div>
 
 </body>

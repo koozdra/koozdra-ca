@@ -2,6 +2,6 @@
   "host": "ftp.koozdra.ca",
   "user": "username",
   "password": "password",
-  "port": 27,
+  "port": 21,
   "cwd": "public_html"
 }

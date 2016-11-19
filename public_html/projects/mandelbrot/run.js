@@ -261,10 +261,11 @@ function transition(state) {
 };
 
 function clear(state){
-  function clearInner(state) {
-    state.ctx.clearRect(0, 0, state.width, state.height)
-  }
-  requestAnimationFrame(_.partial(clearInner, state));
+  // requestAnimationFrame(() => {
+  //   state.ctx.clearRect(0, 0, state.width, state.height);
+  // });
+
+  state.ctx.clearRect(0, 0, state.width, state.height);
 }
 
 function start(){
@@ -280,6 +281,8 @@ function start(){
 
     const mouse = d3.mouse(this);
     const point = Point(mouse[0] * state.ctxScale, mouse[1] * state.ctxScale);
+
+    console.log(mouse, point);
 
     state = transition(state).centerViewPortAt(point);
 
@@ -325,30 +328,42 @@ function clickModeCenter() {
   state.interactions.click = 'center';
 }
 
-function sizeXSmall() {
-  state.width = 140;
-  state.height = 90;
-
-  setUpCanvasDimensions(state.canvas);
-
+function resize(state, width, height) {
   clear(state);
+
+  state.width = width * state.ctxScale;
+  state.height = height * state.ctxScale;
+
+  state.canvas.width = width;
+  state.canvas.height = height;
+  setUpCanvas(state.ctx, state.canvas);
+
   drawByRow(state);
+}
+
+function sizeXSmall() {
+  resize(state, 140, 90);
 }
 
 function sizeSmall() {
-  state.width = 280;
-  state.height = 180;
-
-  setUpCanvasDimensions(state.canvas);
-  clear(state);
-  drawByRow(state);
+  resize(state, 280, 180);
 }
 
 function sizeLarge() {
-  state.width = 280 * 4;
-  state.height = 180 * 4;
+  resize(state, 560, 360);
+}
 
-  setUpCanvasDimensions(state.canvas, state.width, state.height);
-  clear(state);
-  drawByRow(state);
+function sizeFull() {
+  resize(state, 100, 100);
+}
+
+function generateImage() {
+  var img = new Image();
+  img.src = state.canvas.toDataURL();
+  const output = document.querySelector('div.imageOutput');
+
+  output.appendChild(document.createElement('br'));
+  output.appendChild(img);
+
+  img.width /= state.ctxScale;
 }
