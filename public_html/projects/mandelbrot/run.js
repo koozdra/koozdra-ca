@@ -367,3 +367,10 @@ function generateImage() {
 
   img.width /= state.ctxScale;
 }
+
+function iterations(n) {
+  state.rank.timeout = n;
+
+  clear(state);
+  drawByRow(state);
+}
