@@ -13,9 +13,6 @@
   <title>Dimitri Tishchenko - Descent Into Mathness</title>
 
 
-  <!-- Custom styles for this template -->
-  <link href="/css/template.css" rel="stylesheet">
-
   <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
   <!--[if lt IE 9]>
   <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -23,7 +20,7 @@
   <![endif]-->
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.9/d3.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.min.js"></script>
@@ -67,7 +64,7 @@
     </a>
   </div>
   <div class="text-center">
-    <canvas id="board" width="140" height="90" style="border: 1px solid"></canvas>
+    <canvas id="board" width="280" height="180" style="border: 1px solid"></canvas>
   </div>
 
   <div class="row">
@@ -89,10 +86,10 @@
     <div class="col-md-2">
       <strong>Size:</strong>
       <div class="radio">
-        <label><input type="radio" name="size" onclick="sizeXSmall();" checked>Extra Small</label>
+        <label><input type="radio" name="size" onclick="sizeXSmall();">Extra Small</label>
       </div>
       <div class="radio">
-        <label><input type="radio" name="size" onclick="sizeSmall();">Small</label>
+        <label><input type="radio" name="size" onclick="sizeSmall();" checked>Small</label>
       </div>
       <div class="radio">
         <label><input type="radio" name="size" onclick="sizeMedium();">Medium</label>
@@ -111,7 +108,7 @@
         <label><input type="radio" name="iterations" onclick="iterations(1000);">1000</label>
       </div>
       <div class="radio">
-        <label><input type="radio" name="iterations" onclick="iterations(2500);">2500</label>
+        <label><input type="radio" name="iterations" onclick="iterations(2500);" checked>2500</label>
       </div>
       <div class="radio">
         <label><input type="radio" name="iterations" onclick="iterations(5000);">5000</label>
@@ -120,13 +117,13 @@
         <label><input type="radio" name="iterations" onclick="iterations(7500);">7500</label>
       </div>
       <div class="radio">
-        <label><input type="radio" name="iterations" onclick="iterations(10000);" checked>10000</label>
+        <label><input type="radio" name="iterations" onclick="iterations(10000);">10000</label>
       </div>
       <div class="radio">
-        <label><input type="radio" name="iterations" onclick="iterations(12500);" checked>12500</label>
+        <label><input type="radio" name="iterations" onclick="iterations(12500);">12500</label>
       </div>
       <div class="radio">
-        <label><input type="radio" name="iterations" onclick="iterations(15000);" checked>15000</label>
+        <label><input type="radio" name="iterations" onclick="iterations(15000);">15000</label>
       </div>
     </div>
   </div>

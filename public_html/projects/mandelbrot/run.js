@@ -3,14 +3,14 @@ function Point(x, y) {
   return {
     x: x,
     y: y
-  }
+  };
 }
 
 function ViewPort(tl, br) {
   return {
     tl: tl,
     br: br
-  }
+  };
 }
 
 function Color(r, g, b, a) {
@@ -19,7 +19,7 @@ function Color(r, g, b, a) {
     g: g,
     b: b,
     a: a
-  }
+  };
 }
 // Types ---------------------------------------------
 
@@ -40,9 +40,7 @@ const Colors = {
 function setUpCanvas(ctx, canvas) {
   // messy canvas crap
   if (window.devicePixelRatio > 1) {
-
     setUpCanvasDimensions(canvas);
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   }
   //------------------------------------------------
 }
@@ -57,7 +55,6 @@ function setUpCanvasDimensions(canvas) {
   canvas.style.height = canvasHeight + 'px';
 }
 
-
 function initialState(canvas) {
   const ctx = canvas.getContext('2d');
   const ctxScale = window.devicePixelRatio;
@@ -68,8 +65,6 @@ function initialState(canvas) {
   const height = canvas.height;
   const bufferRow = ctx.createImageData(width, 1);
 
-
-
   return {
     bufferRow,
     ctx,
@@ -79,14 +74,15 @@ function initialState(canvas) {
     height,
     bufferRowData: bufferRow.data,
     bufferPixel: ctx.createImageData(1, 1),
-    viewPort: ViewPort(Point(-width / 2, height / 2), Point(width / 2, -height / 2)),
+    viewPort: ViewPort(
+      Point(-width / 2, height / 2),
+      Point(width / 2, -height / 2)
+    ),
+    zoom: 1,
     rank: {
-      timeout: 10000,
+      timeout: 2500,
       steps: 23,
-      colors: [
-        Colors.black,
-        Colors.white
-      ]
+      colors: [Colors.black, Colors.white]
     },
     interactions: {
       click: 'zoomIn'
@@ -99,9 +95,9 @@ function mandelbrotRank(state, point) {
     zx = point.x,
     zy = point.y;
 
-  while (zx*zx + zy*zy < 4 && i < state.rank.timeout){
-    var tx = zx*zx - zy*zy + point.x,
-      ty = 2*zx*zy + point.y;
+  while (zx * zx + zy * zy < 4 && i < state.rank.timeout) {
+    var tx = zx * zx - zy * zy + point.x,
+      ty = 2 * zx * zy + point.y;
 
     zx = tx;
     zy = ty;
@@ -171,7 +167,7 @@ function drawRow(state, y) {
 function drawByRow(state) {
   state.renderState = {
     y: 0
-  }
+  };
 
   function drawByRowInner(state) {
     const renderState = state.renderState;
@@ -183,7 +179,7 @@ function drawByRow(state) {
     }
   }
 
-  requestAnimationFrame(_.partial(drawByRowInner, state))
+  requestAnimationFrame(_.partial(drawByRowInner, state));
 }
 
 function mapIntoViewPort(state, point, viewPort) {
@@ -200,34 +196,27 @@ function centerViewPort(state, point, viewPort) {
     x: viewPort.x + vxy.x - viewPort.width / 2,
     y: viewPort.y + vxy.y - viewPort.height / 2
   });
-};
+}
 
 function transition(state) {
   // TODO
   //var history = [];
 
-  var centerZoomViewPort = _.curry(function(state, z) {
-    // TODO clone state and store in history
+  // TODO clone state and store in history for all function calls
 
-    var dx = ((state.viewPort.br.x - state.viewPort.tl.x) * (1 - z)) / 2,
-      dy = ((state.viewPort.br.y - state.viewPort.tl.y) * (1 - z)) / 2;
+  var centerZoomViewPort = _.curry(function(state, z) {
+    var dx = (state.viewPort.br.x - state.viewPort.tl.x) * (1 - z) / 2,
+      dy = (state.viewPort.br.y - state.viewPort.tl.y) * (1 - z) / 2;
 
     state.viewPort = ViewPort(
-      Point(
-        state.viewPort.tl.x + dx,
-        state.viewPort.tl.y + dy
-      ),
-      Point(
-        state.viewPort.br.x - dx,
-        state.viewPort.br.y - dy
-      )
+      Point(state.viewPort.tl.x + dx, state.viewPort.tl.y + dy),
+      Point(state.viewPort.br.x - dx, state.viewPort.br.y - dy)
     );
 
     return state;
   });
 
   var centerViewPortAt = _.curry(function(state, point) {
-
     var mp = mapIntoViewPort(state, point, state.viewPort),
       cx = (state.viewPort.br.x + state.viewPort.tl.x) / 2,
       cy = (state.viewPort.br.y + state.viewPort.tl.y) / 2,
@@ -235,32 +224,26 @@ function transition(state) {
       dy = mp.y - cy;
 
     state.viewPort = ViewPort(
-      Point(
-        state.viewPort.tl.x + dx,
-        state.viewPort.tl.y + dy
-      ),
-      Point(
-        state.viewPort.br.x + dx,
-        state.viewPort.br.y + dy
-      )
+      Point(state.viewPort.tl.x + dx, state.viewPort.tl.y + dy),
+      Point(state.viewPort.br.x + dx, state.viewPort.br.y + dy)
     );
 
     return state;
   });
 
-  var changeViewWindowSize = _.curry(function(state, width, height) {
-
-  });
+  var changeViewWindowSize = _.curry(function(state, width, height) {});
 
   return {
     centerZoomViewPort: centerZoomViewPort(state),
     centerViewPortAt: centerViewPortAt(state),
     changeViewWindowSize: changeViewWindowSize(state),
-    state: function() { return state; }
-  }
-};
+    state: function() {
+      return state;
+    }
+  };
+}
 
-function clear(state){
+function clear(state) {
   // requestAnimationFrame(() => {
   //   state.ctx.clearRect(0, 0, state.width, state.height);
   // });
@@ -268,7 +251,7 @@ function clear(state){
   state.ctx.clearRect(0, 0, state.width, state.height);
 }
 
-function start(){
+function start() {
   const canvas = document.getElementById('board');
   let state = initialState(canvas);
 
@@ -284,6 +267,15 @@ function start(){
 
     console.log(mouse, point);
 
+    var mappedPoint = mapIntoViewPort(state, point, state.viewPort);
+
+    d3.select('span.currentLocation').html(
+      JSON.stringify({
+        x: mappedPoint.x,
+        y: mappedPoint.y
+      })
+    );
+
     state = transition(state).centerViewPortAt(point);
 
     if (state.interactions.click === 'zoomIn') {
@@ -292,25 +284,17 @@ function start(){
       state = transition(state).centerZoomViewPort(1.7);
     }
 
-
-
-    d3.select('span.currentLocation').html('test');
-
     drawByRow(state);
-
   });
 
   state = transition(state).centerZoomViewPort(0.02);
 
-
   //state.viewPort = JSON.parse('{"tl":{"x":-1.7499333634530672,"y":7.200756595495622e-10},"br":{"x":-1.749933362802201,"y":3.0166153142956183e-10}}')
-
 
   drawByRow(state);
 
   return state;
 }
-
 
 var state = start();
 
@@ -348,13 +332,16 @@ function sizeXSmall() {
 function sizeSmall() {
   resize(state, 280, 180);
 }
-
-function sizeLarge() {
+function sizeMedium() {
   resize(state, 560, 360);
 }
 
+function sizeLarge() {
+  resize(state, 1120, 720);
+}
+
 function sizeFull() {
-  resize(state, 100, 100);
+  resize(state, 2880, 1800);
 }
 
 function generateImage() {

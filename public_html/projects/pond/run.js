@@ -1,5 +1,5 @@
 function Point(x, y) {
-  const point = {
+  return point = {
     x: x,
     y: y,
     neighbours() {
@@ -11,14 +11,24 @@ function Point(x, y) {
       ];
     },
     moveBy(x, y) {
-      point.x += x;
-      point.y += y;
+      return Point(point.x + x, point.y + y);
+    },
+    moveToward(p, mag) {
+      const dx = p.x - point.x;
+      const dy = p.y - point.y;
 
-      return this;
+      return Point(
+        point.x + Math.floor(dx * mag),
+        point.y + Math.floor(dy * mag)
+      );
+    },
+    moveAway(p, mag) {
+      return moveToward(p, -mag);
+    },
+    distanceSquared(p) {
+      return Math.pow((p.x - point.x), 2) + Math.pow((p.y - point.y), 2);
     }
   }
-
-  return point;
 }
 
 function Color(r, g, b, a) {
@@ -55,7 +65,8 @@ const Colors = {
   black: Color(0, 0, 0, 255),
   white: Color(255, 255, 255, 255),
   red: Color(255, 0, 0, 255),
-  green: Color(0, 255, 0, 255)
+  green: Color(0, 255, 0, 255),
+  blue: Color(0, 0, 255, 255)
 };
 
 function setUpCanvas(canvas) {
@@ -83,7 +94,7 @@ setUpCanvas(canvas);
 
 function Board(canvas) {
   const ctx = canvas.getContext('2d');
-  const state = new WeakMap();
+  const state = {};
   const bufferPixel = ctx.createImageData(1, 1);
   const bufferPixelData= bufferPixel.data;
   const width = canvas.width;
@@ -117,89 +128,164 @@ function Board(canvas) {
 
       ctx.putImageData(bufferPixel, p.x, p.y);
       return board;
+    },
+    randomPoint() {
+      return Point(Math.floor(_.random(width)), Math.floor(_.random(height)));
     }
   }
 
   return board;
 }
 
-function Organism(board, color) {
+function Organism(board) {
   const points = [];
-  const exteriors = [];
-  const interiors = [];
 
-  const organism = {
-    start(p) {
-      points.push(p);
-      board.setPoint(1, p);
+  _.times(100, () => {
+    const p = board.randomPoint();
+    points.push(p);
+  });
 
+  return organism = {
+    draw() {
+      _.each(points, (p) => {
+        board
+          .setPoint(1, p)
+          .renderPoint(_.constant(Colors.black), p);
+      });
       return organism;
     },
-    colorer(data) {
-      return data ? color : Colors.white;
-    },
-    grow() {
-      const randomPoint = _.sample(points);
-      const newPoint = _(randomPoint.neighbours())
-        .filter(board.isEmpty)
-        .sample();
+    move() {
+      const p1 = _.sample(points);
+      const p2 = _.sample(points);
+      const dSq = p1.distanceSquared(p2);
 
-      if (newPoint) {
-        board.setPoint(1, newPoint)
-          .renderPoint(organism.colorer, newPoint);
-        points.push(newPoint);
-      } else {
-        _.remove(points, randomPoint);
-        interiors.push(randomPoint);
+      const mag = dSq > 100 ? 0.9 : -0.9;
+      // const mag = 0.8;
+      const p1Dest = p1.moveToward(p2, mag);
+      const p2Dest = p2.moveToward(p1, mag);
+
+      // idea: if destination is occupied then source and dest swap spaces
+
+      if (board.getPoint(p1Dest) !== 1) {
+        board
+          .setPoint(0, p1)
+          .renderPoint(_.constant(Colors.white), p1);
+
+        board
+          .setPoint(1, p1Dest)
+          .renderPoint(_.constant(Colors.black), p1Dest);
       }
 
-      return organism;
+      if (board.getPoint(p2Dest) !== 1) {
+        board
+          .setPoint(0, p2)
+          .renderPoint(_.constant(Colors.white), p2);
+
+        board
+          .setPoint(1, p2Dest)
+          .renderPoint(_.constant(Colors.black), p2Dest);
+      }
     }
   }
-
-  return organism;
-}
-
-function presentBlack(data) {
-  return data ? Colors.black : Colors.white;
 }
 
 const board = Board(canvas);
-
-// console.log(board.setPoint(Point(10, 10)).getPoint(Point(10, 10)));
-board.setPoint(1, Point(10, 11))
-  .setPoint(1, Point(20, 20))
-  .setPoint(1, Point(30, 30))
-  .renderPoint(presentBlack, Point(10, 11))
-  .renderPoint(presentBlack, Point(20, 20))
-  .renderPoint(presentBlack, Point(30, 30));
-
-
-// console.log(Point(10, 10).neighbours());
-
-const organism1 = Organism(board, Colors.black);
-organism1
-  .start(board.center())
-
-const organism2 = Organism(board, Colors.red);
-organism2
-  .start(board.center().moveBy(20, 20))
-
-const organism3 = Organism(board, Colors.green);
-organism3
-  .start(board.center().moveBy(-20, 20))
+const a = Organism(board).draw();
 
 function render() {
+  _.times(1000, a.move);
 
-  _(0)
-    .range(500)
-    .each(() => {
-      organism1.grow();
-      organism2.grow();
-      organism3.grow();
-    });
 
   requestAnimationFrame(render);
 }
 
-requestAnimationFrame(render)
+requestAnimationFrame(render);
+
+
+
+
+
+
+// Organism growth
+
+// function Organism(board, color) {
+//   const points = [];
+//   const exteriors = [];
+//   const interiors = [];
+//
+//   const organism = {
+//     start(p) {
+//       points.push(p);
+//       board.setPoint(1, p);
+//
+//       return organism;
+//     },
+//     colorer(data) {
+//       return data ? color : Colors.white;
+//     },
+//     grow() {
+//       const randomPoint = _.sample(points);
+//       const newPoint = _(randomPoint.neighbours())
+//         .filter(board.isEmpty)
+//         .sample();
+//
+//       if (newPoint) {
+//         board.setPoint(1, newPoint)
+//           .renderPoint(organism.colorer, newPoint);
+//         points.push(newPoint);
+//       } else {
+//         _.remove(points, randomPoint);
+//         interiors.push(randomPoint);
+//       }
+//
+//       return organism;
+//     }
+//   }
+//
+//   return organism;
+// }
+//
+// function presentBlackColoration(data) {
+//   return data ? Colors.black : Colors.white;
+// }
+//
+// const board = Board(canvas);
+//
+// // console.log(board.setPoint(Point(10, 10)).getPoint(Point(10, 10)));
+// board.setPoint(1, Point(10, 11))
+//   .setPoint(1, Point(20, 20))
+//   .setPoint(1, Point(30, 30))
+//   .renderPoint(presentBlackColoration, Point(10, 11))
+//   .renderPoint(presentBlackColoration, Point(20, 20))
+//   .renderPoint(presentBlackColoration, Point(30, 30));
+//
+//
+// // console.log(Point(10, 10).neighbours());
+//
+// const organism1 = Organism(board, Colors.black)
+//   .start(board.center());
+//
+// const organism2 = Organism(board, Colors.red)
+//   .start(board.center().moveBy(1, 1));
+//
+// const organism3 = Organism(board, Colors.green)
+//   .start(board.center().moveBy(-1, -1));
+//
+// const organism4 = Organism(board, Colors.blue)
+//   .start(board.center().moveBy(-30, 30));
+//
+// function render() {
+//
+//   _(0)
+//     .range(100)
+//     .each(() => {
+//       organism1.grow();
+//       organism2.grow();
+//       organism3.grow();
+//       organism4.grow();
+//     });
+//
+//   requestAnimationFrame(render);
+// }
+//
+// requestAnimationFrame(render)
