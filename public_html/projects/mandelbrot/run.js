@@ -23,6 +23,10 @@ function Color(r, g, b, a) {
 }
 // Types ---------------------------------------------
 
+function complexAbs(p) {
+  return Math.sqrt(Math.pow(p.x, 2) + Math.pow(p.y, 2));
+}
+
 function colorRangeAt(c1, c2, z) {
   return Color(
     rangeAt(c1.r, c2.r, z),
@@ -99,13 +103,17 @@ function mandelbrotRank(state, point) {
     var tx = zx * zx - zy * zy + point.x,
       ty = 2 * zx * zy + point.y;
 
+    if (tx === zx && ty === zy) {
+      i = state.rank.timeout - 1;
+    }
+
     zx = tx;
     zy = ty;
 
     i += 1;
   }
 
-  return i;
+  return { rank: i, zn: Point(zx, zy) };
 }
 
 function drawPixel(state, point, color) {
@@ -122,14 +130,17 @@ function rangeAt(a, b, x) {
 }
 
 function rankColor(state, point) {
-  var rank = mandelbrotRank(state, point);
+  var { rank, zn } = mandelbrotRank(state, point);
 
   if (rank < state.rank.timeout) {
-    var div = Math.floor(rank / state.rank.steps),
-      mod = rank % state.rank.steps,
-      currentColor = state.rank.colors[div % state.rank.colors.length],
-      destColor = state.rank.colors[(div + 1) % state.rank.colors.length];
+    const div = Math.floor(rank / state.rank.steps);
+    const mod = rank % state.rank.steps;
+    const currentColor = state.rank.colors[div % state.rank.colors.length];
+    const destColor = state.rank.colors[(div + 1) % state.rank.colors.length];
 
+    // const nsmooth = rank + 1 - Math.log(Math.log(complexAbs(zn))) / Math.log(2);
+
+    // return colorRangeAt(currentColor, destColor, mod / state.rank.steps);
     return colorRangeAt(currentColor, destColor, mod / state.rank.steps);
   } else {
     return Colors.black;
@@ -293,6 +304,9 @@ function start() {
 
   drawByRow(state);
 
+  const rangeIterationElement = document.getElementById('rangeIterations');
+  rangeIterationElement.onchange = iterations;
+
   return state;
 }
 
@@ -344,6 +358,10 @@ function sizeFull() {
   resize(state, 2880, 1800);
 }
 
+function sizeCustom(x, y) {
+  resize(state, x, y);
+}
+
 function generateImage() {
   var img = new Image();
   img.src = state.canvas.toDataURL();
@@ -355,8 +373,8 @@ function generateImage() {
   img.width /= state.ctxScale;
 }
 
-function iterations(n) {
-  state.rank.timeout = n;
+function iterations(e) {
+  state.rank.timeout = parseInt(e.target.value);
 
   clear(state);
   drawByRow(state);

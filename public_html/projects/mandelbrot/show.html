@@ -12,6 +12,8 @@
 
   <title>Dimitri Tishchenko - Descent Into Mathness</title>
 
+  <!-- Custom styles for this template -->
+  <link href="/css/template.css" rel="stylesheet">
 
   <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
   <!--[if lt IE 9]>
@@ -101,29 +103,12 @@
         <label><input type="radio" name="size" onclick="sizeFull();">Full</label>
       </div>
     </div>
+  </div>
 
-    <div class="col-md-2">
-      <strong>Iterations:</strong>
-      <div class="radio">
-        <label><input type="radio" name="iterations" onclick="iterations(1000);">1000</label>
-      </div>
-      <div class="radio">
-        <label><input type="radio" name="iterations" onclick="iterations(2500);" checked>2500</label>
-      </div>
-      <div class="radio">
-        <label><input type="radio" name="iterations" onclick="iterations(5000);">5000</label>
-      </div>
-      <div class="radio">
-        <label><input type="radio" name="iterations" onclick="iterations(7500);">7500</label>
-      </div>
-      <div class="radio">
-        <label><input type="radio" name="iterations" onclick="iterations(10000);">10000</label>
-      </div>
-      <div class="radio">
-        <label><input type="radio" name="iterations" onclick="iterations(12500);">12500</label>
-      </div>
-      <div class="radio">
-        <label><input type="radio" name="iterations" onclick="iterations(15000);">15000</label>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="range full-width">
+        <label style="width:100%"><input value="2500" type="range" name="test" min="2500" max="250000" id="rangeIterations">Iterations</label>
       </div>
     </div>
   </div>
