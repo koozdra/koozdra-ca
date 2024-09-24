@@ -15,8 +15,9 @@ const getContext = (elementId) =>
   document.getElementById(elementId).getContext("2d");
 
 document.addEventListener("DOMContentLoaded", function () {
-  const variantProbabilities = [0.6, 0.7, 0.8, 0.9];
+  const variantProbabilities = [0.4, 0.7, 0.8, 0.9];
   const horizon = 1000;
+  const startingDollars = 1000;
 
   const timeChart = new Chart(getContext("decision_distribution_over_time"), {
     type: "line", // Specify the type of chart
@@ -57,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
       labels: variantProbabilities.map((prob, index) => `V${index} (${prob})`),
       datasets: [
         {
-          data: [10, 20, 30, 40],
+          data: [],
           backgroundColor: variantProbabilities.map(
             (_, index) => `rgba(${colors[index % colors.length]}, 0.5)`
           ),
@@ -75,10 +76,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const worker = new Worker("worker.js");
 
-  worker.postMessage({ variantProbabilities, horizon });
+  worker.postMessage({
+    variantProbabilities,
+    horizon,
+    startingDollars,
+    selectionStrategy: "eGreedy",
+    selectionStrategy: "ucb",
+    // selectionStrategy: "random",
+  });
 
   worker.addEventListener("message", function (e) {
-    const { windowDistributions, occurrence } = e.data;
+    const { windowDistributions, occurrence, currentDollars } = e.data;
     windowDistributions.forEach((series, index) => {
       timeChart.config.data.datasets[index].data = series;
     });
@@ -87,5 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     timeChart.update();
     pieChart.update();
+
+    document.getElementById("total").innerHTML = currentDollars;
   });
 });
