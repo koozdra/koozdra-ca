@@ -1,27 +1,37 @@
+const colors = [
+  "255, 179, 186", // Pastel Red
+  "186, 255, 255", // Pastel Cyan
+  "223, 255, 186", // Pastel Lime
+  "255, 186, 255", // Pastel Magenta
+  "255, 223, 186", // Pastel Orange
+  "255, 255, 186", // Pastel Yellow
+  "186, 255, 201", // Pastel Green
+  "186, 225, 255", // Pastel Blue
+  "255, 223, 255", // Pastel Pink
+  "223, 223, 255", // Pastel Lavender
+];
+
+const getContext = (elementId) =>
+  document.getElementById(elementId).getContext("2d");
+
 document.addEventListener("DOMContentLoaded", function () {
-  const ctx = document.getElementById("myChart").getContext("2d");
-  const config = {
+  const variantProbabilities = [0.6, 0.7, 0.8, 0.9];
+  const horizon = 1000;
+
+  const timeChart = new Chart(getContext("decision_distribution_over_time"), {
     type: "line", // Specify the type of chart
     data: {
-      labels: ["January", "February", "March", "April", "May", "June", "July"], // X-axis labels
-      datasets: [
-        {
-          label: "Right Decisions",
-          data: [60, 70, 80, 90, 85, 75, 95], // Y-axis data for Right Decisions
-          backgroundColor: "rgba(75, 192, 192, 0.5)",
-          borderColor: "rgba(75, 192, 192, 1)",
-          fill: true,
-        },
-        {
-          label: "Wrong Decisions",
-          data: [40, 30, 20, 10, 15, 25, 5], // Y-axis data for Wrong Decisions
-          backgroundColor: "rgba(255, 99, 132, 0.5)",
-          borderColor: "rgba(255, 99, 132, 1)",
-          fill: true,
-        },
-      ],
+      labels: Array.from({ length: 1000 }, (_, i) => i + 1), // X-axis labels
+      datasets: variantProbabilities.map((prob, index) => ({
+        label: `V${index} (${prob})`,
+        data: [],
+        backgroundColor: `rgba(${colors[index % colors.length]}, 0.5)`,
+        borderColor: `rgba(${colors[index % colors.length]}, 1)`,
+        fill: true,
+      })),
     },
     options: {
+      animation: false,
       plugins: {
         tooltip: {
           mode: "index",
@@ -35,29 +45,47 @@ document.addEventListener("DOMContentLoaded", function () {
         y: {
           stacked: true,
           beginAtZero: true,
-          max: 100, // Ensure the y-axis goes from 0 to 100
+          max: 100,
         },
       },
     },
-  };
+  });
 
-  // Create a new Chart instance
-  const chart = new Chart(ctx, config);
+  const pieChart = new Chart(getContext("decision_distribution"), {
+    type: "pie",
+    data: {
+      labels: variantProbabilities.map((prob, index) => `V${index} (${prob})`),
+      datasets: [
+        {
+          data: [10, 20, 30, 40],
+          backgroundColor: variantProbabilities.map(
+            (_, index) => `rgba(${colors[index % colors.length]}, 0.5)`
+          ),
+          borderColor: variantProbabilities.map(
+            (_, index) => `rgba(${colors[index % colors.length]}, 1)`
+          ),
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      animation: false,
+    },
+  });
 
   const worker = new Worker("worker.js");
 
-  worker.postMessage("start");
+  worker.postMessage({ variantProbabilities, horizon });
 
   worker.addEventListener("message", function (e) {
-    const data = e.data;
-    console.log("Received data from worker:", data);
+    const { windowDistributions, occurrence } = e.data;
+    windowDistributions.forEach((series, index) => {
+      timeChart.config.data.datasets[index].data = series;
+    });
+    console.log(occurrence);
+    pieChart.config.data.datasets[0].data = occurrence;
 
-    // You can now use the data received from the worker
-    if (data.rightDecisions !== undefined) {
-      console.log("Right Decisions:", data.rightDecisions);
-    }
-
-    chart.data.datasets[0].data = newRightDecisionsData;
-    chart.data.datasets[1].data = newWrongDecisionsData;
+    timeChart.update();
+    pieChart.update();
   });
 });

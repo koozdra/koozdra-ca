@@ -14,7 +14,7 @@ Create a `deploy/config.json` with ftp information.
 
 Uses express static routing.
 
-`node server/httpServer.js`
+`node server/http_server.js`
 
 ## Deploy
 

@@ -1,7 +1,5 @@
 self.addEventListener("message", function (e) {
-  if (e.data === "start") {
-    runSimulation();
-  }
+  runSimulation(e.data);
 });
 
 const randomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -10,34 +8,42 @@ function selectVariantEGreedy(model) {
   return randomElement(model);
 }
 
-function testVariant(variant) {}
-
-function runSimulation() {
-  const variantProbabilities = [0.6, 0.7, 0.8, 0.9];
-  const horizon = 10;
+function runSimulation({ variantProbabilities, horizon }) {
   const model = variantProbabilities.map((variantProbability, index) => ({
     id: index,
     probability: variantProbability,
     pulls: 0,
     rewards: 0,
   }));
-
-  console.log(model);
+  const windowChunkSize = 10;
+  const windowDistributions = Array.from({ length: 4 }, () => []);
 
   const selections = new Array(horizon);
+  const occurrence = new Array(4).fill(0);
+  let occurrenceCount = 0;
 
   for (let iteration = 0; iteration < horizon; iteration++) {
     const selectedVariant = selectVariantEGreedy(model);
-    selections[iteration] = selectedVariant.id;
-    model[selectedVariant.id].pulls += 1;
+
+    const selectedId = selectedVariant.id;
+    selections[iteration] = selectedId;
+    model[selectedId].pulls += 1;
     if (Math.random() < selectedVariant.probability) {
-      model[selectedVariant.id].rewards += 1;
+      model[selectedId].rewards += 1;
     }
+
+    occurrence[selectedId] += 1;
+    occurrenceCount += 1;
+
+    occurrence
+      .map((d) => Math.round((d / occurrenceCount) * 100))
+      .forEach((d, index) => {
+        windowDistributions[index].push(d);
+      });
   }
 
-  console.log(selections, model);
-  // Send the new data back to the main thread
-  // self.postMessage({
-  //   rightDecisions: newRightDecisions,
-  // });
+  self.postMessage({
+    windowDistributions,
+    occurrence,
+  });
 }
