@@ -37,7 +37,7 @@ const ucbSelectionStrategy = (model) => {
 
 const selectionStrategies = {
   random: randomElement,
-  eGreedy: eGreedySelectionStrategy,
+  e_greedy: eGreedySelectionStrategy,
   ucb: ucbSelectionStrategy,
 };
 

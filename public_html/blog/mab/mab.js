@@ -11,18 +11,24 @@ const colors = [
   "223, 223, 255", // Pastel Lavender
 ];
 
+const variantProbabilities = [0.1, 0.3, 0.7, 0.9];
+const horizon = 1000;
+const startingDollars = 1000;
+
 const getContext = (elementId) =>
   document.getElementById(elementId).getContext("2d");
 
-document.addEventListener("DOMContentLoaded", function () {
-  const variantProbabilities = [0.4, 0.7, 0.8, 0.9];
-  const horizon = 1000;
-  const startingDollars = 1000;
+const setupCharts = (
+  selectionStrategy,
+  useOverTimeCanvasId,
 
-  const timeChart = new Chart(getContext("decision_distribution_over_time"), {
-    type: "line", // Specify the type of chart
+  pieCanvasId,
+  totalElementId
+) => {
+  const timeChart = new Chart(getContext(useOverTimeCanvasId), {
+    type: "line",
     data: {
-      labels: Array.from({ length: 1000 }, (_, i) => i + 1), // X-axis labels
+      labels: Array.from({ length: 1000 }, (_, i) => i + 1),
       datasets: variantProbabilities.map((prob, index) => ({
         label: `V${index} (${prob})`,
         data: [],
@@ -52,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
     },
   });
 
-  const pieChart = new Chart(getContext("decision_distribution"), {
+  const pieChart = new Chart(getContext(pieCanvasId), {
     type: "pie",
     data: {
       labels: variantProbabilities.map((prob, index) => `V${index} (${prob})`),
@@ -71,6 +77,7 @@ document.addEventListener("DOMContentLoaded", function () {
     },
     options: {
       animation: false,
+      responsive: false,
     },
   });
 
@@ -80,9 +87,7 @@ document.addEventListener("DOMContentLoaded", function () {
     variantProbabilities,
     horizon,
     startingDollars,
-    selectionStrategy: "eGreedy",
-    selectionStrategy: "ucb",
-    // selectionStrategy: "random",
+    selectionStrategy,
   });
 
   worker.addEventListener("message", function (e) {
@@ -96,6 +101,31 @@ document.addEventListener("DOMContentLoaded", function () {
     timeChart.update();
     pieChart.update();
 
-    document.getElementById("total").innerHTML = currentDollars;
+    // const bestVariant
+
+    document.getElementById(totalElementId).innerHTML = currentDollars;
   });
+};
+
+document.addEventListener("DOMContentLoaded", function () {
+  setupCharts(
+    "random",
+    "decision_distribution_over_time_random",
+    "decision_distribution_random",
+    "total_random"
+  );
+
+  setupCharts(
+    "e_greedy",
+    "decision_distribution_over_time_e_greedy",
+    "decision_distribution_e_greedy",
+    "total_e_greedy"
+  );
+
+  setupCharts(
+    "ucb",
+    "decision_distribution_over_time_ucb",
+    "decision_distribution_ucb",
+    "total_ucb"
+  );
 });
