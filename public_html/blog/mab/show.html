@@ -63,59 +63,109 @@
 	</nav>
 
 	<div class="container">
-		<div class="starter-template">
-			<h1>Multi-Armed Bandits</h1>
-			
-			<p>
-				Optimal decision making in the face of uncertainty.
-			</p>
-      <p>
-        There are four slot machines to choose from <strong>V0, V1, V2 and V3</strong>. 
-        They each have a chance of winning <strong>[0.1, 0.3, 0.7, 0.9]</strong>.
-        We have <strong>1000 oppurtunities</strong> to choose a slot machines (horizon).
-        We start with $1000.
-        It costs $1 to use a slot machine. If we win, we get two dollars, if we loose, we
-        loosed the dollar.
-      </p>
-      <p>
-        There are three decision strategies presented. Each is evaluated on the problem
-        and the result dollar value is shown.
-      </p>
+    <h1>Multi-Armed Bandits</h1>
+    <p>
+      Optimal decision making in the face of uncertainty.
+    </p>
+    <p>
+      There are four slot machines to choose from <strong>V0, V1, V2 and V3</strong>. 
+      They each have a chance of winning <strong>[0.1, 0.3, 0.7, 0.9]</strong>.
+      We have <strong>1000 oppurtunities</strong> to choose a slot machines (horizon).
+      We start with $1000.
+      It costs $1 to use a slot machine. If we win, we get two dollars, if we loose, we
+      loose the dollar.
+    </p>
+    <p>
+      There are three decision strategies presented. Each is evaluated on the problem
+      and the result dollar value is shown.
+    </p>
+    <p>
+      Not only do we want to use V3 as much as possible, we also have a secondary goal
+      to avoid using V0 as much as possible. We will have to use the worst variant because
+      we have to learn about all the variants.
+    </p>
+    <p>
+      As we select variants we are going to keep two counters. 
+      <strong>Pulls</strong>: The number of times we have used this variant.
+      <strong>Rewards</strong>: The number of times something good happened for this variant.
+      These counters for each variant comprises our <strong>model</strong>. We will
+      use the model to make decisions and we will update our mode base on outcomes.
+    </p>
 
-      <div class="section">
-        <h2>Random</h2>
-        <p></p>
-        <h3>Variant Selection Over Time</h3>
-        <canvas id="decision_distribution_over_time_random" width="400" height="200"></canvas>
-        <h3>Variant Selection Distribution</h3>
-        <canvas id="decision_distribution_random" width="400" height="400" class="centered"></canvas>
-        <h3>Results</h3>
-        <p>Total: $<span id="total_random"></span></p>
-        <p>
-          This is a random walk. We should end up roughly where we started at $1000.
-        </p>
-      </div>
+    <div class="section">
+      <h2>Random</h2>
+      <p>Our most naive solution could be to randomely select the variants.</p>
+      <h3>Variant Selection Over Time</h3>
+      <canvas id="decision_distribution_over_time_random" width="400" height="200"></canvas>
+      <h3>Variant Selection Distribution</h3>
+      <canvas id="decision_distribution_random" width="400" height="400" class="centered"></canvas>
+      <h3>Results</h3>
+      <p>Total: $<span id="total_random"></span></p>
+      <p>
+        This is a random walk. We should end up roughly where we started at $1000.
+      </p>
+    </div>
+  
+    <div class="section">
+      <h2>Epsilon Greedy</h2>
+      <p>
+        We could use our model to pick the best variant every time. But how do we know our model is correct?
+        We need to balance two goals; <strong>Exploitation</strong> - using the best variant
+        as often as possible and <strong>Exploration</strong> - using the other variants
+        to verify our assumption about the current best variant or to find a new
+        best variant and use it as often as possible. This epsilon greedy algorithm
+        select the best variant (according to the model, exploitation) 90% of the time and selects
+        a random variant for the rest (exploration).
+      </p>
+      <h3>Variant Selection Over Time</h3>
+      <canvas id="decision_distribution_over_time_e_greedy" width="400" height="200"></canvas>
+      <h3>Variant Selection Distribution</h3>
+      <canvas id="decision_distribution_e_greedy" width="400" height="400" class="centered"></canvas>
+      <h3>Results</h3>
+      <p>Total: $<span id="total_e_greedy"></span></p>
+      <p>
+        We used the best variant more than half of the time. In our exploration we used
+        V0 as much as V1 and V2.
+      </p>
+    </div>
     
-      <div class="section">
-        <h2>Epsilon Greedy</h2>
-        <h3>Variant Selection Over Time</h3>
-        <canvas id="decision_distribution_over_time_e_greedy" width="400" height="200"></canvas>
-        <h3>Variant Selection Distribution</h3>
-        <canvas id="decision_distribution_e_greedy" width="400" height="400" class="centered"></canvas>
-        <h3>Results</h3>
-        <p>Total: $<span id="total_e_greedy"></span></p>
+    <div class="section">
+      <h2>UCB</h2>
+      <p>
+        In this selection strategy we use the conversion rate of the variant and a boost
+        to variants that fall below an uncertainty threshold. This selection strategy
+        is deterministic (doesn't depend on randomness).
+      </p>
+      <p>
+        <a href="https://www.desmos.com/calculator/zc58xwqrbs" target="_blank">Desmos interactive calculator</a>
+      </p>
+      <p><strong>rewards / pulls + Math.sqrt((2 * Math.log(totalPulls)) / pulls)</strong></p>
+      <h3>Variant Selection Over Time</h3>
+      <canvas id="decision_distribution_over_time_ucb" width="400" height="200"></canvas>
+      <h3>Variant Selection Distribution</h3>
+      <canvas id="decision_distribution_ucb" width="400" height="400" class="centered"></canvas>
+      <h3>Results</h3>
+      <p>Total: $<span id="total_ucb"></span></p>
+      <p>
+        Our dollar figure is the highest. We used the best variant for the vast amount of our decisions.
+        We only minimally used our worst variant.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>
+        Simulation Averages
+      </h2>
+      <p>
+        We can run the simulations and keep an average per algorithm.
+      </p>
+      <div>
+        <canvas id="simulation_averages" width="400" height="200"></canvas>
       </div>
-      
-      <div class="section">
-        <h2>UCB</h2>
-        <h3>Variant Selection Over Time</h3>
-        <canvas id="decision_distribution_over_time_ucb" width="400" height="200"></canvas>
-        <h3>Variant Selection Distribution</h3>
-        <canvas id="decision_distribution_ucb" width="400" height="400" class="centered"></canvas>
-        <h3>Results</h3>
-        <p>Total: $<span id="total_ucb"></span></p>
-      </div>
-		</div>
+    </div>
+
+
+    <p><a href="https://web.stanford.edu/class/psych209/Readings/SuttonBartoIPRLBook2ndEd.pdf">Read the text book</a></p>
 		
 	</div>
 	<!-- /.container -->
