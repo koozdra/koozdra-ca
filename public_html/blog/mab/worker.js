@@ -47,19 +47,23 @@ function runSimulation({
   selectionStrategy,
   startingDollars,
 }) {
+  const numVariants = variantProbabilities.length;
   const model = variantProbabilities.map((variantProbability, index) => ({
     id: index,
     probability: variantProbability,
     pulls: 0,
     rewards: 0,
   }));
-  const windowChunkSize = 10;
-  const windowDistributions = Array.from({ length: 4 }, () => []);
+  const distributions = Array.from({ length: numVariants }, () => []);
 
   const selections = new Array(horizon);
   const occurrence = new Array(4).fill(0);
   let occurrenceCount = 0;
   let currentDollars = startingDollars;
+
+  const conversions = variantProbabilities.map(() =>
+    Array.from({ length: horizon }, () => [])
+  );
 
   for (let iteration = 0; iteration < horizon; iteration++) {
     const selectedVariant = selectionStrategies[selectionStrategy](model);
@@ -81,13 +85,18 @@ function runSimulation({
     occurrence
       .map((d) => Math.round((d / occurrenceCount) * 100))
       .forEach((d, index) => {
-        windowDistributions[index].push(d);
+        distributions[index].push(d);
+        const { pulls, rewards } = model.at(index);
+        conversions[index][iteration] = pulls > 0 ? rewards / pulls : 0;
       });
   }
 
+  // console.log(conversions);
+
   self.postMessage({
-    windowDistributions,
+    distributions,
     occurrence,
+    conversions,
     currentDollars,
   });
 }

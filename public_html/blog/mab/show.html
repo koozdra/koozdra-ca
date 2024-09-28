@@ -20,7 +20,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script defer src="mab.js"></script>
   <style>
-    canvas.centered {
+    .centered {
       margin-left: auto;
       margin-right: auto;
     }
@@ -67,10 +67,11 @@
     <p>
       Optimal decision making in the face of uncertainty.
     </p>
+    <img src="/blog/images/mab.png"></img>
     <p>
       There are four slot machines to choose from <strong>V0, V1, V2 and V3</strong>. 
       They each have a chance of winning <strong>[0.1, 0.3, 0.7, 0.9]</strong>.
-      We have <strong>1000 oppurtunities</strong> to choose a slot machines (horizon).
+      We have <strong>1000 opportunities</strong> to choose a slot machines (horizon).
       We start with $1000.
       It costs $1 to use a slot machine. If we win, we get two dollars, if we loose, we
       loose the dollar.
@@ -90,6 +91,11 @@
       <strong>Rewards</strong>: The number of times something good happened for this variant.
       These counters for each variant comprises our <strong>model</strong>. We will
       use the model to make decisions and we will update our mode base on outcomes.
+    </p>
+
+    <p>
+      The charts visualize the distribution of the cumulative sum of variant usage over the test period.
+      All the simulations run in the browser in a worker.
     </p>
 
     <div class="section">
@@ -157,11 +163,36 @@
         Simulation Averages
       </h2>
       <p>
-        We can run the simulations and keep an average per algorithm.
+        We can run the simulations and keep an average per algorithm. There are three lines
+        per selection strategy. The top and bottom lines are the max and min seen so far.
+        The middle line is the running average.
       </p>
       <div>
         <canvas id="simulation_averages" width="400" height="200"></canvas>
       </div>
+      <p>
+        We see that the random selection strategy stays near $1000, E-Greedy gets $1308 and UCB roughly
+        $1690. This is out of a possible $1900. The lowest observed score of UCB is above the highest
+        observed score for E-greedy. The max and min bands around UCB are tighter than E-greedy.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>Conversion Rate Over Time</h2>
+      <p>
+        The model is counters for variants. The conversion rate is a measure of how often
+        a reward is experience per pull. The model uses these conversion rate to make 
+        decisions about which variant to choose next. This chart visualizes how
+        these conversion rates evolve over time.
+      </p>
+      <div>
+        <canvas id="conversion_over_time" width="400" height="200"></canvas>
+      </div>
+      <p>
+        UCB tends to undervalue lower performing variants. The conversion rate of the best
+        variant is most accurate since it used at most or more in all three selection 
+        strategies.
+      </p>
     </div>
 
 
