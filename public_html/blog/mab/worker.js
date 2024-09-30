@@ -54,15 +54,25 @@ function runSimulation({
     pulls: 0,
     rewards: 0,
   }));
-  const distributions = Array.from({ length: numVariants }, () => []);
+  const distributions = Array.from({ length: numVariants }, () =>
+    Array.from({ length: horizon })
+  );
+  const windowedDistributions = Array.from({ length: numVariants }, () =>
+    Array.from({ length: horizon })
+  );
 
   const selections = new Array(horizon);
   const occurrence = new Array(4).fill(0);
   let occurrenceCount = 0;
+
+  const windowSize = 300;
+  const windowedOccurrence = new Array(4).fill(0);
+  let windowedOccurrenceCount = 0;
+
   let currentDollars = startingDollars;
 
-  const conversions = variantProbabilities.map(() =>
-    Array.from({ length: horizon }, () => [])
+  const conversions = Array.from({ length: numVariants }, () =>
+    Array.from({ length: horizon })
   );
 
   for (let iteration = 0; iteration < horizon; iteration++) {
@@ -82,10 +92,26 @@ function runSimulation({
     occurrence[selectedId] += 1;
     occurrenceCount += 1;
 
+    windowedOccurrence[selectedId] += 1;
+    if (windowedOccurrenceCount < windowSize) {
+      windowedOccurrenceCount += 1;
+    } else {
+      windowedOccurrence[selections[iteration - windowSize]] -= 1;
+    }
+
+    // console.log(windowedOccurrenceCount);
+
+    windowedOccurrence
+      .map((d) => Math.round((d / windowedOccurrenceCount) * 100))
+      .forEach((d, index) => {
+        windowedDistributions[index][iteration] = d;
+      });
+
     occurrence
       .map((d) => Math.round((d / occurrenceCount) * 100))
       .forEach((d, index) => {
-        distributions[index].push(d);
+        distributions[index][iteration] = d;
+
         const { pulls, rewards } = model.at(index);
         conversions[index][iteration] = pulls > 0 ? rewards / pulls : 0;
       });
@@ -94,8 +120,10 @@ function runSimulation({
   // console.log(conversions);
 
   self.postMessage({
+    selections,
     distributions,
     occurrence,
+    windowedDistributions,
     conversions,
     currentDollars,
   });

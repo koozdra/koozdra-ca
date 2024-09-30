@@ -40,6 +40,29 @@ const runSimulation = async (config) =>
     });
   });
 
+const windowSmooth = (windowSize, arr) => {
+  let sum = 0;
+
+  return arr.map((value, index) => {
+    sum += value;
+
+    if (index >= windowSize) {
+      sum -= arr[index - windowSize];
+    }
+
+    const currentWindowSize = Math.min(index + 1, windowSize);
+    return sum / currentWindowSize;
+  });
+};
+
+const scanAverage = (arr) => {
+  let sum = 0;
+  return arr.map((value, index) => {
+    sum += value;
+    return sum / (index + 1);
+  });
+};
+
 const setupCharts = async (
   selectionStrategy,
   useOverTimeCanvasId,
@@ -51,13 +74,14 @@ const setupCharts = async (
   const timeChart = new Chart(getContext(useOverTimeCanvasId), {
     type: "line",
     data: {
-      labels: Array.from({ length: 1000 }, (_, i) => i + 1),
+      labels: Array.from({ length: horizon }, (_, i) => i + 1),
       datasets: variantProbabilities.map((prob, index) => ({
         label: `V${index} (${prob})`,
         data: [],
         backgroundColor: `rgba(${colors[index % colors.length]}, 0.5)`,
         borderColor: `rgba(${colors[index % colors.length]}, 1)`,
         fill: true,
+        lineTension: 0,
       })),
     },
     options: {
@@ -103,17 +127,25 @@ const setupCharts = async (
     },
   });
 
-  const { distributions, occurrence, currentDollars, conversions } =
-    await runSimulation({
-      variantProbabilities,
-      horizon,
-      startingDollars,
-      selectionStrategy,
-    });
+  const {
+    distributions,
+    occurrence,
+    windowedDistributions,
+    currentDollars,
+    conversions,
+  } = await runSimulation({
+    variantProbabilities,
+    horizon,
+    startingDollars,
+    selectionStrategy,
+  });
 
   distributions.forEach((series, index) => {
     timeChart.config.data.datasets[index].data = series;
   });
+  // windowedDistributions.forEach((series, index) => {
+  //   timeChart.config.data.datasets[index].data = series;
+  // });
   pieChart.config.data.datasets[0].data = occurrence;
 
   conversions.forEach((series, index) => {
@@ -131,8 +163,7 @@ const setupCharts = async (
   document.getElementById(totalElementId).innerHTML = currentDollars;
 };
 
-const generateSimulationAverages = async (button) => {
-  if (button) button.blur();
+const generateSimulationAverages = async () => {
   const numTrials = 100;
   const simulationAverageChart = new Chart(getContext("simulation_averages"), {
     type: "line",
@@ -161,12 +192,66 @@ const generateSimulationAverages = async (button) => {
     },
   });
 
+  const selectionAverageCharts = selectionStrategies.map(
+    (selectionStrategy) =>
+      new Chart(getContext(`simulation_average_${selectionStrategy}`), {
+        type: "line",
+        data: {
+          labels: Array.from({ length: horizon }, (_, i) => i + 1),
+          datasets: variantProbabilities.map((prob, index) => ({
+            label: `V${index} (${prob})`,
+            data: Array.from({ length: horizon }, () => 25),
+            backgroundColor: `rgba(${colors[index % colors.length]}, 0.5)`,
+            borderColor: `rgba(${colors[index % colors.length]}, 1)`,
+            fill: true,
+          })),
+        },
+        options: {
+          animation: false,
+          plugins: {
+            tooltip: {
+              mode: "index",
+              intersect: false,
+            },
+          },
+          scales: {
+            x: {
+              stacked: true,
+            },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              max: 100,
+            },
+          },
+        },
+      })
+  );
+
+  // console.log(selectionAverageCharts[0].config.data.datasets);
+
   const totals = [];
   const maxes = [];
   const mins = [];
 
-  const generateDataPoint = async (counter, max) => {
-    const results = await Promise.all(
+  const selectionsAgg = Array.from({ length: selectionStrategies.length }, () =>
+    Array.from({ length: horizon }, () => [
+      Array.from({ length: variantProbabilities.length }, () => 0), // counter per variant
+      0, // total
+    ])
+  );
+
+  const selectionsAggSeries = Array.from(
+    { length: selectionStrategies.length },
+    () =>
+      Array.from({ length: variantProbabilities.length }, () =>
+        Array.from({ length: horizon })
+      )
+  );
+  // const selectionsAgg = Array.from({length: selectionStrategies.length}, ) // strategy x horizon
+
+  const generateDataPoint = async (simulationCounter, max) => {
+    const selectionStrategyResults = await Promise.all(
       selectionStrategies.map((selectionStrategy) =>
         runSimulation({
           variantProbabilities,
@@ -177,28 +262,63 @@ const generateSimulationAverages = async (button) => {
       )
     );
 
-    results.map(({ currentDollars }, index) => {
-      totals[index] = (totals[index] || 0) + currentDollars;
-      maxes[index] = Math.max(maxes[index] || 0, currentDollars);
-      mins[index] = Math.min(mins[index] || 10000000, currentDollars);
+    selectionStrategyResults.forEach(
+      ({ currentDollars, selections }, stratIndex) => {
+        totals[stratIndex] = (totals[stratIndex] || 0) + currentDollars;
+        maxes[stratIndex] = Math.max(maxes[stratIndex] || 0, currentDollars);
+        mins[stratIndex] = Math.min(
+          mins[stratIndex] || 10000000,
+          currentDollars
+        );
 
-      simulationAverageChart.config.data.datasets[index].data.push(
-        totals[index] / (counter + 1)
-      );
+        simulationAverageChart.config.data.datasets[stratIndex].data.push(
+          totals[stratIndex] / (simulationCounter + 1)
+        );
+        simulationAverageChart.config.data.datasets[
+          stratIndex + selectionStrategies.length
+        ].data.push(maxes[stratIndex]);
+        simulationAverageChart.config.data.datasets[
+          stratIndex + selectionStrategies.length * 2
+        ].data.push(mins[stratIndex]);
 
-      simulationAverageChart.config.data.datasets[
-        index + selectionStrategies.length
-      ].data.push(maxes[index]);
+        selections.forEach((selection, selectionIndex) => {
+          selectionsAgg[stratIndex][selectionIndex][0][selection] += 1;
+          selectionsAgg[stratIndex][selectionIndex][1] += 1;
 
-      simulationAverageChart.config.data.datasets[
-        index + selectionStrategies.length * 2
-      ].data.push(mins[index]);
-    });
+          variantProbabilities.forEach((_, variantIndex) => {
+            const variantCount =
+              selectionsAgg[stratIndex][selectionIndex][0][variantIndex];
+            const total = selectionsAgg[stratIndex][selectionIndex][1];
+
+            selectionsAggSeries[stratIndex][variantIndex][selectionIndex] =
+              total > 0 ? (variantCount / total) * 100 : 0;
+          });
+        });
+      }
+    );
 
     simulationAverageChart.update();
 
-    if (counter < max) {
-      setTimeout(generateDataPoint, 0, counter + 1, max);
+    selectionAverageCharts.forEach((chart, chartIndex) => {
+      variantProbabilities.forEach((_, variantIndex) => {
+        chart.config.data.datasets[variantIndex].data =
+          selectionsAggSeries[chartIndex][variantIndex];
+      });
+      chart.update();
+    });
+
+    if (simulationCounter < max) {
+      setTimeout(generateDataPoint, 0, simulationCounter + 1, max);
+    } else {
+      selectionAverageCharts.forEach((chart, chartIndex) => {
+        variantProbabilities.forEach((_, variantIndex) => {
+          chart.config.data.datasets[variantIndex].data = scanAverage(
+            horizon,
+            selectionsAggSeries[chartIndex][variantIndex]
+          );
+        });
+        chart.update();
+      });
     }
   };
 
