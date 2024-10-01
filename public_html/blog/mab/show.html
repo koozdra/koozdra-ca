@@ -158,7 +158,7 @@
     </div>
     
     <div class="section">
-      <h2>UCB</h2>
+      <h2>UCB - Upper Confidence Bound</h2>
       <p>
         In this selection strategy we use the conversion rate of the variant and a boost
         to variants that fall below an uncertainty threshold. This selection strategy
@@ -198,10 +198,12 @@
       </p>
     </div>
 
+    <h2>100 Simulations Aggregations</h2>
+
     <div class="section">
-      <h2>
-        Simulation Averages
-      </h2>
+      <h3>
+        Dollar Averages
+      </h3>
       <p>
         We can run the simulations and keep an average per algorithm. There are three lines
         per selection strategy. The top and bottom lines are the max and min seen so far.
@@ -218,23 +220,30 @@
     </div>
 
     <div class="section">
-      <h2>Average Random</h2>
+      <h3>Random - Average Variant Selection Distributions Over Time</h3>
       <div>
         <canvas id="simulation_average_random" width="400" height="200"></canvas>
       </div>
     </div>
 
     <div class="section">
-      <h2>Average E-Greedy</h2>
+      <h3>E-Greedy - Average Variant Selection Distributions Over Time</h3>
       <div>
         <canvas id="simulation_average_e_greedy" width="400" height="200"></canvas>
       </div>
     </div>
 
     <div class="section">
-      <h2>Average UCB</h2>
+      <h3>UCB - Average Variant Selection Distributions Over Time</h3>
       <div>
         <canvas id="simulation_average_ucb" width="400" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Average Conversion Rates Over Time</h3>
+      <div>
+        <canvas id="simulation_average_conversion_rates" width="400" height="200"></canvas>
       </div>
     </div>
 

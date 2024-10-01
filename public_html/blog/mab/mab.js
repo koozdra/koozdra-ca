@@ -228,7 +228,25 @@ const generateSimulationAverages = async () => {
       })
   );
 
-  // console.log(selectionAverageCharts[0].config.data.datasets);
+  const conversionAverageChart = new Chart(
+    getContext("simulation_average_conversion_rates"),
+    {
+      type: "line",
+      data: {
+        labels: Array.from({ length: horizon }, (_, i) => i + 1),
+        datasets: [`Random`, `E-Greedy`, `UCB`].flatMap((label, index) =>
+          variantProbabilities.map((prob, labelIndex) => ({
+            label: `${label} V${index} (${prob})`,
+            data: [],
+            borderColor: `rgba(${colors[index % colors.length]}, 1)`,
+          }))
+        ),
+      },
+      options: {
+        animation: false,
+      },
+    }
+  );
 
   const totals = [];
   const maxes = [];
@@ -248,7 +266,26 @@ const generateSimulationAverages = async () => {
         Array.from({ length: horizon })
       )
   );
-  // const selectionsAgg = Array.from({length: selectionStrategies.length}, ) // strategy x horizon
+
+  // const conversionRatesAgg = Array.from(
+  //   { length: selectionStrategies.length },
+  //   () =>
+  //     Array.from({ length: horizon }, () => [
+  //       Array.from({ length: variantProbabilities.length }, () => 0), // counter per variant
+  //       0, // total
+  //     ])
+  // );
+
+  const conversionRatesAggSeries = Array.from(
+    { length: selectionStrategies.length },
+    () =>
+      Array.from({ length: variantProbabilities.length }, () =>
+        Array.from({ length: horizon }, () => [
+          0, // sum
+          0, // count
+        ])
+      )
+  );
 
   const generateDataPoint = async (simulationCounter, max) => {
     const selectionStrategyResults = await Promise.all(
@@ -263,7 +300,7 @@ const generateSimulationAverages = async () => {
     );
 
     selectionStrategyResults.forEach(
-      ({ currentDollars, selections }, stratIndex) => {
+      ({ currentDollars, selections, conversions }, stratIndex) => {
         totals[stratIndex] = (totals[stratIndex] || 0) + currentDollars;
         maxes[stratIndex] = Math.max(maxes[stratIndex] || 0, currentDollars);
         mins[stratIndex] = Math.min(
@@ -294,6 +331,17 @@ const generateSimulationAverages = async () => {
               total > 0 ? (variantCount / total) * 100 : 0;
           });
         });
+
+        conversions.forEach((variantSeries, variantIndex) => {
+          variantSeries.forEach((value, seriesIndex) => {
+            conversionRatesAggSeries[stratIndex][variantIndex][
+              seriesIndex
+            ][0] += value;
+            conversionRatesAggSeries[stratIndex][variantIndex][
+              seriesIndex
+            ][1] += 1;
+          });
+        });
       }
     );
 
@@ -301,24 +349,31 @@ const generateSimulationAverages = async () => {
 
     selectionAverageCharts.forEach((chart, chartIndex) => {
       variantProbabilities.forEach((_, variantIndex) => {
-        chart.config.data.datasets[variantIndex].data =
-          selectionsAggSeries[chartIndex][variantIndex];
+        chart.config.data.datasets[variantIndex].data = scanAverage(
+          selectionsAggSeries[chartIndex][variantIndex]
+        );
       });
       chart.update();
     });
 
+    conversionRatesAggSeries.forEach((selectionStrategy, strategyIndex) => {
+      selectionStrategy.forEach((variantSeries, variantIndex) => {
+        const insertionIndex =
+          strategyIndex * selectionStrategies.length +
+          variantIndex +
+          strategyIndex;
+
+        conversionAverageChart.config.data.datasets[insertionIndex].data =
+          conversionRatesAggSeries[strategyIndex][variantIndex].map(
+            ([sum, count]) => sum / count
+          );
+      });
+    });
+
+    conversionAverageChart.update();
+
     if (simulationCounter < max) {
       setTimeout(generateDataPoint, 0, simulationCounter + 1, max);
-    } else {
-      selectionAverageCharts.forEach((chart, chartIndex) => {
-        variantProbabilities.forEach((_, variantIndex) => {
-          chart.config.data.datasets[variantIndex].data = scanAverage(
-            horizon,
-            selectionsAggSeries[chartIndex][variantIndex]
-          );
-        });
-        chart.update();
-      });
     }
   };
 
