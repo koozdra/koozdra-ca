@@ -31,7 +31,7 @@ const getContext = (elementId) =>
 
 const runSimulation = async (config) =>
   new Promise((resolve) => {
-    const worker = new Worker("worker.js");
+    const worker = new Worker("/blog/lib/mab/worker.js");
     worker.postMessage(config);
 
     worker.addEventListener("message", function (e) {

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="description" content="Dimitri Tishchenko's personal page.">
+<meta name="author" content="Dimitri Tishchenko">
+
+
+<title>Dimitri Tishchenko - Descent Into Mathness</title>
+
+<!-- Bootstrap core CSS -->
+<link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Custom styles for this template -->
+<link href="/css/template.css" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="regret.js"></script>
+  <style>
+    .centered {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    div.section {
+      margin-bottom: 100px;
+    }
+
+    p {
+      font-size: large;
+    }
+  </style>
+</head>
+
+<body>
+
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed"
+					data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+					aria-controls="navbar">
+					<span class="sr-only">Toggle navigation</span> <span
+						class="icon-bar"></span> <span class="icon-bar"></span> <span
+						class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="/index.html">Dimitri Tishchenko</a>
+			</div>
+			<div id="navbar" class="collapse navbar-collapse">
+				<ul class="nav navbar-nav">
+					<li><a href="/index.html">Home</a></li>
+					<li><a href="/projects/index.html">Projects</a></li>
+					<li class="active"><a href="/blog/index.html">Blog</a></li>
+					<li><a href="/photography/index.html">Photography</a></li>
+					<li><a href="/contact/index.html">Contact</a></li>
+				</ul>
+			</div>
+			<!--/.nav-collapse -->
+		</div>
+	</nav>
+
+	<div class="container">
+    <h1>Multi-Armed Bandits</h1>
+    <p>
+      <strong>Regret</strong>: The Cost of Bad Decisions
+    </p>
+    <p>
+      When a variant is chosen that is not the best variant, we experience opportunity loss. For example
+      if our best variant converts at 0.9 and we choose a variant that converts at 0.7, we experience 0.2
+      units of regret. In the context of clicks per view over 100 views, you would lose a potential of
+      20 clicks. This amount is referred to as <strong>regret</strong>. We can evaluate algorithms by their
+      regret accumulation patterns. 
+    </p>
+  
+    <p>
+      For each algorithm we track cumulative regret over time. The horizon is extended to 3000 trials.
+    </p>
+    
+    <div class="section">
+      <h3>Regret Accumulation Over Time</h3>
+      <div>
+        <canvas id="regret_over_time" width="400" height="200"></canvas>
+      </div>
+      <h3>Observations</h3>
+      <p>
+        While e-greedy initially accumulates less regret, especially in the first ~1300 decisions, we observe
+        an inversion in the traces and UCB starting to accumulate less regret. E-greedy has <strong>linear</strong>
+        regret accumulation and UCB has <strong>asymptotic</strong> regret accumulation. This means that the more
+        decisions we make the more accurate our decisions are going to become. 
+      </p>
+    </div>
+  
+    <p><a href="https://web.stanford.edu/class/psych209/Readings/SuttonBartoIPRLBook2ndEd.pdf">Read the text book</a></p>
+		
+	</div>
+	<!-- /.container -->
+
+
+	<!-- Bootstrap core JavaScript
+    ================================================== -->
+	<!-- Placed at the end of the document so the pages load faster -->
+	<script
+		src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<script src="/bootstrap/js/bootstrap.min.js"></script>
+
+
+
+</body>
+</html>

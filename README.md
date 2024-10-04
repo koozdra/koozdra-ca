@@ -2,7 +2,7 @@
 
 Personal website contents.
 
-[koozdra.ca](http://koozdra.ca "Peronal Website")
+[koozdra.ca](https://koozdra.ca "Personal Website")
 
 ## Setup
 

@@ -83,8 +83,10 @@
       As we select variants we are going to keep two counters per variant. 
       <strong>Pulls</strong>: The number of times we have used this variant.
       <strong>Rewards</strong>: The number of times something good happened for this variant.
-      These counters for each variant comprises our <strong>model</strong>. We will
-      use the model to make decisions and we will update our mode base on outcomes.
+      These counters for each variant comprises our <strong>model</strong>. Each variant 
+      has a <strong>conversion rate</strong> which is the number of rewards we have
+      per number of pulls. We will
+      use the model to make decisions and we will update our model based on outcomes.
     </p>
 
     <p>
@@ -94,7 +96,7 @@
       best variant.
     </p>
 
-    <h2>Simulations</h2>
+    <h2>The Casino</h2>
     <p>
       There are four slot machines to choose from <strong>V0, V1, V2 and V3</strong>. 
       They each have a chance of winning <strong>[10%, 30%, 70%, 90%]</strong>.
@@ -213,9 +215,9 @@
         <canvas id="simulation_averages" width="400" height="200"></canvas>
       </div>
       <p>
-        We see that the random selection strategy stays near $1000, E-Greedy gets $1308 and UCB roughly
-        $1690. This is out of a possible $1900. The lowest observed score of UCB is above the highest
-        observed score for E-greedy. The max and min bands around UCB are tighter than E-greedy.
+        We see that the random selection strategy stays near $1000. E-greedy average is slightly higher
+        than UCB. This is explained in part 2 and has to do with our limited number of trials. The band around
+        UCB is much tighter than e-greedy.
       </p>
     </div>
 

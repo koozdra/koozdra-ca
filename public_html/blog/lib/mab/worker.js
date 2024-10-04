@@ -10,18 +10,18 @@ const maxBy = (items, compareMapper) =>
   );
 
 const eGreedySelectionStrategy = (model) => {
-  const unvisetedVariant = model.find(({ pulls }) => pulls === 0);
-  if (unvisetedVariant) return unvisetedVariant;
+  const unvisitedVariant = model.find(({ pulls }) => pulls === 0);
+  if (unvisitedVariant) return unvisitedVariant;
 
-  const isExplore = Math.random() < 0.5;
+  const isExplore = Math.random() < 0.1;
   return isExplore
     ? randomElement(model)
     : maxBy(model, ({ pulls, rewards }) => rewards / pulls);
 };
 
 const ucbSelectionStrategy = (model) => {
-  const unvisetedVariant = model.find(({ pulls }) => pulls === 0);
-  if (unvisetedVariant) return unvisetedVariant;
+  const unvisitedVariant = model.find(({ pulls }) => pulls === 0);
+  if (unvisitedVariant) return unvisitedVariant;
 
   const totalPulls = model
     .map(({ pulls }) => pulls)
@@ -39,6 +39,14 @@ const selectionStrategies = {
   random: randomElement,
   e_greedy: eGreedySelectionStrategy,
   ucb: ucbSelectionStrategy,
+};
+
+const scanSum = (arr) => {
+  let sum = 0;
+  return arr.map((value, index) => {
+    sum += value;
+    return sum;
+  });
 };
 
 function runSimulation({
@@ -75,6 +83,10 @@ function runSimulation({
     Array.from({ length: horizon })
   );
 
+  const bestVariantProbability = Math.max(...variantProbabilities);
+
+  const regret = Array.from({ length: horizon });
+
   for (let iteration = 0; iteration < horizon; iteration++) {
     const selectedVariant = selectionStrategies[selectionStrategy](model);
 
@@ -88,6 +100,8 @@ function runSimulation({
 
       currentDollars += 2;
     }
+
+    regret[iteration] = bestVariantProbability - selectedVariant.probability;
 
     occurrence[selectedId] += 1;
     occurrenceCount += 1;
@@ -126,5 +140,6 @@ function runSimulation({
     windowedDistributions,
     conversions,
     currentDollars,
+    cumulativeRegret: scanSum(regret),
   });
 }
