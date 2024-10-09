@@ -95,8 +95,9 @@ function runSimulation({
 
     if (iteration >= sectionMax) {
       variantsCounter += 1;
+
       bestVariantProbability = Math.max(
-        ...variantProbabilities[variantsCounter][1]
+        ...variantsSchedule[variantsCounter][1]
       );
     }
 
