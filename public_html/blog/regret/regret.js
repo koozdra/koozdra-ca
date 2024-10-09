@@ -23,6 +23,7 @@ const colors = [
 
 const variantProbabilities = [0.1, 0.3, 0.7, 0.9];
 const horizon = 3000;
+const variantsSchedule = [[horizon, variantProbabilities]];
 const startingDollars = 1000;
 const selectionStrategies = ["e_greedy", "ucb"];
 
@@ -73,13 +74,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         conversions,
         cumulativeRegret,
       } = await runSimulation({
-        variantProbabilities,
+        variantsSchedule,
+        maxNumVariants: variantProbabilities.length,
         horizon,
         startingDollars,
         selectionStrategy,
       });
-
-      // console.log(cumulativeRegret);
 
       cumulativeRegret.forEach((value, seriesIndex) => {
         const averageContainer = regretAverages[strategyIndex][seriesIndex];

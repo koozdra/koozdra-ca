@@ -49,77 +49,77 @@ const scanSum = (arr) => {
   });
 };
 
+// variantsSchedule example: [sectionMax, variants][]
+// [
+//   [500, [0.25, 0.4, 0.5, 0.7]],
+//   [1000, [0.25, 0.4, 0.5, 0.7, 0.5, 0.6, 0.9]],
+// ], maxNumVariants: 7
 function runSimulation({
-  variantProbabilities,
+  variantsSchedule,
+  maxNumVariants,
   horizon,
   selectionStrategy,
   startingDollars,
 }) {
-  const numVariants = variantProbabilities.length;
-  const model = variantProbabilities.map((variantProbability, index) => ({
+  const model = Array.from({ length: maxNumVariants }, (_, index) => ({
     id: index,
-    probability: variantProbability,
     pulls: 0,
     rewards: 0,
   }));
-  const distributions = Array.from({ length: numVariants }, () =>
+
+  const distributions = Array.from({ length: maxNumVariants }, () =>
     Array.from({ length: horizon })
   );
-  const windowedDistributions = Array.from({ length: numVariants }, () =>
+  const windowedDistributions = Array.from({ length: maxNumVariants }, () =>
     Array.from({ length: horizon })
   );
 
   const selections = new Array(horizon);
-  const occurrence = new Array(4).fill(0);
+  const occurrence = new Array(maxNumVariants).fill(0);
   let occurrenceCount = 0;
-
-  const windowSize = 300;
-  const windowedOccurrence = new Array(4).fill(0);
-  let windowedOccurrenceCount = 0;
 
   let currentDollars = startingDollars;
 
-  const conversions = Array.from({ length: numVariants }, () =>
+  const conversions = Array.from({ length: maxNumVariants }, () =>
     Array.from({ length: horizon })
   );
 
-  const bestVariantProbability = Math.max(...variantProbabilities);
+  let bestVariantProbability = Math.max(...variantsSchedule[0][1]);
 
   const regret = Array.from({ length: horizon });
+  let variantsCounter = 0;
 
   for (let iteration = 0; iteration < horizon; iteration++) {
-    const selectedVariant = selectionStrategies[selectionStrategy](model);
+    const [sectionMax, variantProbabilities] =
+      variantsSchedule[variantsCounter];
+
+    if (iteration >= sectionMax) {
+      variantsCounter += 1;
+      bestVariantProbability = Math.max(
+        ...variantProbabilities[variantsCounter][1]
+      );
+    }
+
+    const subModel = model.slice(0, variantProbabilities.length);
+
+    const selectedVariant = selectionStrategies[selectionStrategy](subModel);
 
     currentDollars -= 1;
 
     const selectedId = selectedVariant.id;
+    const selectedProb = variantProbabilities[selectedId];
     selections[iteration] = selectedId;
     model[selectedId].pulls += 1;
-    if (Math.random() < selectedVariant.probability) {
+    if (Math.random() < selectedProb) {
       model[selectedId].rewards += 1;
 
       currentDollars += 2;
     }
 
-    regret[iteration] = bestVariantProbability - selectedVariant.probability;
+    regret[iteration] = bestVariantProbability - selectedProb;
 
     occurrence[selectedId] += 1;
     occurrenceCount += 1;
-
-    windowedOccurrence[selectedId] += 1;
-    if (windowedOccurrenceCount < windowSize) {
-      windowedOccurrenceCount += 1;
-    } else {
-      windowedOccurrence[selections[iteration - windowSize]] -= 1;
-    }
-
-    // console.log(windowedOccurrenceCount);
-
-    windowedOccurrence
-      .map((d) => Math.round((d / windowedOccurrenceCount) * 100))
-      .forEach((d, index) => {
-        windowedDistributions[index][iteration] = d;
-      });
 
     occurrence
       .map((d) => Math.round((d / occurrenceCount) * 100))
@@ -131,13 +131,10 @@ function runSimulation({
       });
   }
 
-  // console.log(conversions);
-
   self.postMessage({
     selections,
     distributions,
     occurrence,
-    windowedDistributions,
     conversions,
     currentDollars,
     cumulativeRegret: scanSum(regret),

@@ -23,6 +23,7 @@ const colors = [
 
 const variantProbabilities = [0.1, 0.3, 0.7, 0.9];
 const horizon = 1000;
+const variantsSchedule = [[horizon, variantProbabilities]];
 const startingDollars = 1000;
 const selectionStrategies = ["random", "e_greedy", "ucb"];
 
@@ -127,25 +128,19 @@ const setupCharts = async (
     },
   });
 
-  const {
-    distributions,
-    occurrence,
-    windowedDistributions,
-    currentDollars,
-    conversions,
-  } = await runSimulation({
-    variantProbabilities,
-    horizon,
-    startingDollars,
-    selectionStrategy,
-  });
+  const { distributions, occurrence, currentDollars, conversions } =
+    await runSimulation({
+      variantsSchedule,
+      maxNumVariants: variantProbabilities.length,
+      horizon,
+      startingDollars,
+      selectionStrategy,
+    });
 
   distributions.forEach((series, index) => {
     timeChart.config.data.datasets[index].data = series;
   });
-  // windowedDistributions.forEach((series, index) => {
-  //   timeChart.config.data.datasets[index].data = series;
-  // });
+
   pieChart.config.data.datasets[0].data = occurrence;
 
   conversions.forEach((series, index) => {
@@ -267,15 +262,6 @@ const generateSimulationAverages = async () => {
       )
   );
 
-  // const conversionRatesAgg = Array.from(
-  //   { length: selectionStrategies.length },
-  //   () =>
-  //     Array.from({ length: horizon }, () => [
-  //       Array.from({ length: variantProbabilities.length }, () => 0), // counter per variant
-  //       0, // total
-  //     ])
-  // );
-
   const conversionRatesAggSeries = Array.from(
     { length: selectionStrategies.length },
     () =>
@@ -291,7 +277,8 @@ const generateSimulationAverages = async () => {
     const selectionStrategyResults = await Promise.all(
       selectionStrategies.map((selectionStrategy) =>
         runSimulation({
-          variantProbabilities,
+          variantsSchedule,
+          maxNumVariants: variantProbabilities.length,
           horizon,
           startingDollars,
           selectionStrategy,
