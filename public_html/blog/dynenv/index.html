@@ -74,41 +74,173 @@
       <a href="/blog/regret/index.html">Part two - Regret</a>
     </p>
     <p>
-      So far we have only encountered slot machines that don't change their probabilities. There
-      have been a fixed number of slot machines. What if a new slot machine is wheeled to the end of our
-      row? How much time should we devote to it to potentially find a new best slot machine? Which algorithms
-      perform better in various situations?
+      Continuing on with our slot machines story. Imagine that you are pulling the slot machines and
+      you have to go to the bathroom. When you come back, the position of the slot machines has been 
+      changed. How fast can our algorithms figure out the change and react.  There
+      have also been a fixed number of slot machines. What if a new slot machine is wheeled to the end of our
+      row? How much time should we devote to it to potentially find a new best slot machine?
+    </p>
+    <p>
+      Each chart shows off the average of many simulations using 
+      a <strong>variant schedule</strong>. A variant schedule changes the conversion
+      rates of the variants for the specified timestep.
     </p>
     
     <div class="section">
-      <h2>Scenario 1: Adding new best variant</h2>
+      <h2>Scenario 1: Shuffling the variants</h2>
       <p>Variant Schedule</p>
       <p>0: [0.25, 0.4, 0.5, 0.7]</p>
-      <p>horizon/2: [0.25, 0.4, 0.5, 0.7, 0.5, 0.6, 0.9]</p>
+      <p>1000: [0.7, 0.5, 0.4, 0.25]</p>
       <p>
-        We start with four variants. Half way through the test we add three new variants where
+        We start with four variants. Half way through the test we
+        change the order. Now our first variant is the best and our last variant
+        is the worst.
       </p>
       <h3>
-        Variant Selection E-Greedy Over Time (200 trials)
+        Variant Selection E-Greedy Over Time
       </h3>
+      <p>
+        E-greedy is slow to react but does eventually converge on the new best variant. 
+      </p>
       <div>
-        <canvas id="selection_over_time_e_greedy" width="400" height="200"></canvas>
+        <canvas id="selection_over_time_e_greedy_0" width="400" height="200"></canvas>
+      </div>
+      
+      <h3>
+        Variant Selection UCB Over Time
+      </h3>
+      <p>
+        UCB very quickly shift to the new variant and uses it most often.
+      </p>
+      <div>
+        <canvas id="selection_over_time_ucb_0" width="400" height="200"></canvas>
       </div>
       <h3>
-        Variant Selection UCB Over Time (200 trials)
+        Regret Over Time
       </h3>
+      <p>
+        E-greedy regret balloons when the world shifts while UCB is able to adapt even
+        to wild swings in variant conversion. 
+      </p>
       <div>
-        <canvas id="selection_over_time_ucb" width="400" height="200"></canvas>
+        <canvas id="regret_over_time_0" width="400" height="200"></canvas>
       </div>
+    </div>
+
+
+    <div class="section">
+      <h2>Scenario 2: Adding New Best Variant</h2>
+      <p>Variant Schedule</p>
+      <p>0: [0.25, 0.4, 0.5, 0.7]</p>
+      <p>1000: [0.25, 0.4, 0.5, 0.7, <strong>0.4, 0.4, 0.9</strong>]</p>
+      <p>
+        We start with four variants. Half way through the test we add three new 
+        variants where two an not great and one is the new best variant.
+      </p>
       <h3>
-        Average Regret Accumulation Over Time (200 trials)
+        Variant Selection E-Greedy Over Time
       </h3>
+      <p>
+        E-greedy holds on to the old best variant for a while before switching to the new best.
+      </p>
       <div>
-        <canvas id="regret_over_time" width="400" height="200"></canvas>
+        <canvas id="selection_over_time_e_greedy_1" width="400" height="200"></canvas>
       </div>
+      
+      <h3>
+        Variant Selection UCB Over Time
+      </h3>
+      <p>
+        UCB nicely restarted experimentation and starts to nicely explore the new variants.
+      </p>
+      <div>
+        <canvas id="selection_over_time_ucb_1" width="400" height="200"></canvas>
+      </div>
+      
+      <h3>
+        Average Regret Accumulation Over Time
+      </h3>
       <p>
         After the introduction of the new variants, epsilon greedy's regret curve gets steeper.
       </p>
+      <div>
+        <canvas id="regret_over_time_1" width="400" height="200"></canvas>
+      </div>
+    </div>
+
+    
+    <div class="section">
+      <h2>Scenario 2: Adding new best variant</h2>
+      <p>Variant Schedule</p>
+      <p>0: [0.25, 0.4, 0.5, 0.7]</p>
+      <p>1000: [0.25, 0.4, 0.5, 0.7, <strong>0.3, 0.3, 0.2</strong>]</p>
+      <p>
+        We start with four variants. Half way through the test we add three new 
+        variants where all are bad.
+      </p>
+      <h3>
+        Variant Selection E-Greedy Over Time
+      </h3>
+      <p>
+        E-greedy has only a tiny blip of exploration. Notice though that the new variants
+        now take up a slice of the explore time.
+      </p>
+      <div>
+        <canvas id="selection_over_time_e_greedy_2" width="400" height="200"></canvas>
+      </div>
+      <h3>
+        Variant Selection UCB Over Time
+      </h3>
+      <p>
+        UCB has a larger exploration blip but moves towards better convergence.
+      </p>
+      <div>
+        <canvas id="selection_over_time_ucb_2" width="400" height="200"></canvas>
+      </div>
+      <h3>
+        Regret Over Time
+      </h3>
+      <p>
+        UCB has a larger investment in assessing new variants.
+      </p>
+      <div>
+        <canvas id="regret_over_time_2" width="400" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Scenario 4: An interesting failure case with UCB</h2>
+      <p>Variant Schedule</p>
+      <p>0: [0.25, 0.4, 0.5, 0.7]</p>
+      <p>1000: [0.25, 0.4, 0.5, 0.7, <strong>0.6, 0.6, 0.6</strong>]</p>
+      <p>Three new variants are added that are slightly worse than the best variant.</p>
+      <h3>
+        Variant Selection E-Greedy Over Time
+      </h3>
+      <p>
+        E-greedy handles the case cleanly.
+      </p>
+      <div>
+        <canvas id="selection_over_time_e_greedy_3" width="400" height="200"></canvas>
+      </div>
+      <h3>
+        Variant Selection UCB Over Time
+      </h3>
+      <p>
+        UCB over explores the new variants and contributes to regret.
+      </p>
+      <div>
+        <canvas id="selection_over_time_ucb_3" width="400" height="200"></canvas>
+      </div>
+      <h3>
+        Variant Selection UCB Over Time
+      </h3>
+      <p>
+        UCB accumulates a lot of regret in this situation.
+      </p>
+      <div>
+        <canvas id="regret_over_time_3" width="400" height="200"></canvas>
+      </div>
     </div>
   
     <p><a href="https://web.stanford.edu/class/psych209/Readings/SuttonBartoIPRLBook2ndEd.pdf">Read the text book</a></p>

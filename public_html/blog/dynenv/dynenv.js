@@ -76,8 +76,9 @@ const averageAdjacent = (arr) => {
   }
   return result;
 };
-const getContext = (elementId) =>
-  document.getElementById(elementId).getContext("2d");
+const getContext = (elementId) => {
+  return document.getElementById(elementId).getContext("2d");
+};
 
 const runSimulation = async (config) =>
   new Promise((resolve) => {
@@ -90,140 +91,171 @@ const runSimulation = async (config) =>
     });
   });
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const numTrials = 200;
+const findMaxNumVariants = (variantsSchedule) =>
+  Math.max(...variantsSchedule.map((t) => t.at(1)).map((t) => t.length));
 
-  const scenarios = [
-    [
-      [horizon / 2, [0.25, 0.4, 0.5, 0.7]],
-      [horizon, [0.25, 0.4, 0.5, 0.7, 0.5, 0.6, 0.9]],
-    ],
-    [
-      [horizon / 2, [0.25, 0.4, 0.5, 0.7]],
-      [horizon, [0.25, 0.4, 0.5, 0.7, 0.5, 0.5, 0.5]],
-    ],
-  ];
-
-  const simulationAverageChart = new Chart(getContext(`regret_over_time`), {
-    type: "line",
-    data: {
-      labels: Array.from({ length: horizon }, (_, i) => i + 1),
-      datasets: selectionStrategies.map((strat, strategyIndex) => ({
-        label: strat,
-        data: [],
-        borderColor: `rgba(${colors[strategyIndex % colors.length]}, 1)`,
-      })),
-    },
-    options: {
-      animation: false,
-    },
-  });
+const setupCharts = (scenarioIndex, maxNumVariants) => {
+  const simulationAverageChart = new Chart(
+    getContext(`regret_over_time_${scenarioIndex}`),
+    {
+      type: "line",
+      data: {
+        labels: Array.from({ length: horizon }, (_, i) => i + 1),
+        datasets: selectionStrategies.map((strat, strategyIndex) => ({
+          label: strat,
+          data: [],
+          borderColor: `rgba(${colors[strategyIndex % colors.length]}, 1)`,
+        })),
+      },
+      options: {
+        animation: false,
+      },
+    }
+  );
 
   const selectionsCharts = selectionStrategies.map(
     (selectionStrategy) =>
-      new Chart(getContext(`selection_over_time_${selectionStrategy}`), {
-        type: "line",
-        data: {
-          labels: Array.from({ length: horizon }, (_, i) => i + 1),
-          datasets: Array.from({ length: maxNumVariants }, (_, index) => ({
-            label: `V${index}`,
-            data: [],
-            backgroundColor: `rgba(${colors[index % colors.length]}, 0.5)`,
-            borderColor: `rgba(${colors[index % colors.length]}, 1)`,
-            fill: true,
-          })),
-        },
-        options: {
-          animation: false,
-          scales: {
-            x: {
-              stacked: true,
-            },
-            y: {
-              stacked: true,
-              beginAtZero: true,
-              max: 100,
-              min: 0,
+      new Chart(
+        getContext(`selection_over_time_${selectionStrategy}_${scenarioIndex}`),
+        {
+          type: "line",
+          data: {
+            labels: Array.from({ length: horizon }, (_, i) => i + 1),
+            datasets: Array.from({ length: maxNumVariants }, (_, index) => ({
+              label: `V${index}`,
+              data: [],
+              backgroundColor: `rgba(${colors[index % colors.length]}, 0.5)`,
+              borderColor: `rgba(${colors[index % colors.length]}, 1)`,
+              fill: true,
+            })),
+          },
+          options: {
+            animation: false,
+            scales: {
+              x: {
+                stacked: true,
+              },
+              y: {
+                stacked: true,
+                beginAtZero: true,
+                max: 100,
+                min: 0,
+              },
             },
           },
-        },
-      })
-  );
-
-  const regretAverages = Array.from(
-    { length: selectionStrategies.length },
-    () => Array.from({ length: horizon }, () => ({ count: 0, sum: 0 }))
-  );
-
-  const selectionsAggSeries = Array.from(
-    { length: selectionStrategies.length },
-    () =>
-      Array.from({ length: horizon }, () => ({
-        timesSelected: Array.from({ length: maxNumVariants }, () => 0),
-        total: 0,
-      }))
-  );
-
-  const selectionsAggChartSeries = Array.from(
-    { length: selectionStrategies.length },
-    () =>
-      Array.from({ length: maxNumVariants }, () =>
-        Array.from({ length: horizon })
+        }
       )
   );
 
-  const runTrial = (counter, maxCounter) => {
-    selectionStrategies.forEach(async (selectionStrategy, strategyIndex) => {
-      const { selections, cumulativeRegret } = await runSimulation({
-        variantsSchedule,
-        maxNumVariants,
-        horizon,
-        startingDollars,
-        selectionStrategy,
-      });
-
-      selections.forEach((value, seriesIndex) => {
-        const averageContainer =
-          selectionsAggSeries[strategyIndex][seriesIndex];
-        averageContainer.timesSelected[value] += 1;
-        averageContainer.total += 1;
-
-        Array.from({ length: maxNumVariants }).forEach((_, variantIndex) => {
-          selectionsAggChartSeries[strategyIndex][variantIndex][seriesIndex] =
-            (averageContainer.timesSelected[variantIndex] /
-              averageContainer.total) *
-            100;
-        });
-      });
-
-      cumulativeRegret.forEach((value, seriesIndex) => {
-        const averageContainer = regretAverages[strategyIndex][seriesIndex];
-        averageContainer.sum += value;
-        averageContainer.count += 1;
-      });
-
-      if (counter % 50 === 0) {
-        simulationAverageChart.config.data.datasets[strategyIndex].data =
-          regretAverages[strategyIndex].map(({ count, sum }) => sum / count);
-
-        const selectionStrategyChart = selectionsCharts[strategyIndex];
-        Array.from({ length: maxNumVariants }).forEach((_, variantIndex) => {
-          selectionStrategyChart.config.data.datasets[variantIndex].data =
-            movingAverage(
-              10,
-              selectionsAggChartSeries[strategyIndex][variantIndex]
-            );
-        });
-
-        simulationAverageChart.update();
-        selectionStrategyChart.update();
-      }
-    });
-
-    if (counter < maxCounter) {
-      setTimeout(runTrial, 0, counter + 1, maxCounter);
-    }
+  return {
+    simulationAverageChart,
+    selectionsCharts,
   };
+};
 
-  runTrial(0, numTrials);
+document.addEventListener("DOMContentLoaded", async () => {
+  const numTrials = 300;
+
+  const scenarios = [
+    [
+      [1000, [0.25, 0.4, 0.5, 0.7]],
+      [horizon, [0.7, 0.5, 0.4, 0.25]],
+    ],
+    [
+      [1000, [0.25, 0.4, 0.5, 0.7]],
+      [horizon, [0.25, 0.4, 0.5, 0.7, 0.4, 0.4, 0.9]],
+    ],
+    [
+      [1000, [0.25, 0.4, 0.5, 0.7]],
+      [horizon, [0.25, 0.4, 0.5, 0.7, 0.3, 0.3, 0.2]],
+    ],
+    [
+      [1000, [0.25, 0.4, 0.5, 0.7]],
+      [horizon, [0.25, 0.4, 0.5, 0.7, 0.6, 0.6, 0.6]],
+    ],
+  ];
+
+  scenarios.forEach((variantsSchedule, scenarioIndex) => {
+    const maxNumVariants = findMaxNumVariants(variantsSchedule);
+    const { simulationAverageChart, selectionsCharts } = setupCharts(
+      scenarioIndex,
+      maxNumVariants
+    );
+
+    const regretAverages = Array.from(
+      { length: selectionStrategies.length },
+      () => Array.from({ length: horizon }, () => ({ count: 0, sum: 0 }))
+    );
+
+    const selectionsAggSeries = Array.from(
+      { length: selectionStrategies.length },
+      () =>
+        Array.from({ length: horizon }, () => ({
+          timesSelected: Array.from({ length: maxNumVariants }, () => 0),
+          total: 0,
+        }))
+    );
+    const selectionsAggChartSeries = Array.from(
+      { length: selectionStrategies.length },
+      () =>
+        Array.from({ length: maxNumVariants }, () =>
+          Array.from({ length: horizon })
+        )
+    );
+
+    const runTrial = (counter, maxCounter) => {
+      selectionStrategies.forEach(async (selectionStrategy, strategyIndex) => {
+        const { selections, cumulativeRegret } = await runSimulation({
+          variantsSchedule,
+          maxNumVariants,
+          horizon,
+          startingDollars,
+          selectionStrategy,
+        });
+
+        selections.forEach((value, seriesIndex) => {
+          const averageContainer =
+            selectionsAggSeries[strategyIndex][seriesIndex];
+          averageContainer.timesSelected[value] += 1;
+          averageContainer.total += 1;
+
+          Array.from({ length: maxNumVariants }).forEach((_, variantIndex) => {
+            selectionsAggChartSeries[strategyIndex][variantIndex][seriesIndex] =
+              (averageContainer.timesSelected[variantIndex] /
+                averageContainer.total) *
+              100;
+          });
+        });
+
+        cumulativeRegret.forEach((value, seriesIndex) => {
+          const averageContainer = regretAverages[strategyIndex][seriesIndex];
+          averageContainer.sum += value;
+          averageContainer.count += 1;
+        });
+
+        if (counter % 100 === 0) {
+          simulationAverageChart.config.data.datasets[strategyIndex].data =
+            regretAverages[strategyIndex].map(({ count, sum }) => sum / count);
+
+          const selectionStrategyChart = selectionsCharts[strategyIndex];
+          Array.from({ length: maxNumVariants }).forEach((_, variantIndex) => {
+            selectionStrategyChart.config.data.datasets[variantIndex].data =
+              movingAverage(
+                10,
+                selectionsAggChartSeries[strategyIndex][variantIndex]
+              );
+          });
+
+          simulationAverageChart.update();
+          selectionStrategyChart.update();
+        }
+      });
+
+      if (counter < maxCounter) {
+        setTimeout(runTrial, 0, counter + 1, maxCounter);
+      }
+    };
+
+    runTrial(0, numTrials);
+  });
 });
