@@ -68,6 +68,15 @@
       Optimal decision making in the face of uncertainty.
     </h2>
     <p>
+      <a href="/blog/mab/index.html">Part one - The Casino</a>
+    </p>
+    <p>
+      <a href="/blog/regret/index.html">Part two - Regret</a>
+    </p> 
+    <p>
+      <a href="/blog/dynenv/index.html">Part three - Dynamic Environments</a>
+    </p> 
+    <p>
       Multi-Armed bandits are named after "one armed bandits" a nickname for slot
       machines that implies that they are stealing your money. A slot machine has
       an <strong>arm</strong>. Players <strong>pull</strong> the arm to play. If they
@@ -125,9 +134,18 @@
       <h2>Random</h2>
       <p>Our most naive solution could be to completely ignore our model and randomly select the variants. </p>
       <h3>Variant Selection Over Time</h3>
-      <canvas id="decision_distribution_over_time_random" width="400" height="200"></canvas>
+      <p>
+        Variants are selected uniformly. As we have more trials the size of each bucket
+        for each variant approaches the same size.
+      </p>
+      <div>
+        <canvas id="decision_distribution_over_time_random" width="400" height="200"></canvas>
+      </div>
       <h3>Variant Selection Distribution</h3>
-      <canvas id="decision_distribution_random" width="400" height="400" class="centered"></canvas>
+      <p>Buckets are roughly equally sized.</p>
+      <div>
+        <canvas id="decision_distribution_random" width="400" height="400" class="centered"></canvas>
+      </div>
       <h3>Results</h3>
       <p>Total: $<strong><span id="total_random"></span></strong></p>
       <p>
@@ -148,9 +166,19 @@
         <strong>10% - Exploration - Pick a random variant</strong>
       </p>
       <h3>Variant Selection Over Time</h3>
-      <canvas id="decision_distribution_over_time_e_greedy" width="400" height="200"></canvas>
+      <p>
+        Rapid convergence on the best variant with consistent exploration.
+      </p>
+      <div>
+        <canvas id="decision_distribution_over_time_e_greedy" width="400" height="200"></canvas>
+      </div>
       <h3>Variant Selection Distribution</h3>
-      <canvas id="decision_distribution_e_greedy" width="400" height="400" class="centered"></canvas>
+      <p>
+        Heavy utilization of the best variant.
+      </p>
+      <div>
+        <canvas id="decision_distribution_e_greedy" width="400" height="400" class="centered"></canvas>
+      </div>
       <h3>Results</h3>
       <p>Total: $<strong><span id="total_e_greedy"></span></strong></p>
       <p>
@@ -171,9 +199,17 @@
       </p>
       <p><strong>rewards / pulls + sqrt((2 * log(totalPulls)) / pulls)</strong></p>
       <h3>Variant Selection Over Time</h3>
-      <canvas id="decision_distribution_over_time_ucb" width="400" height="200"></canvas>
+      <p>Convergence to the best variant but much more exploration.</p>
+      <div>
+        <canvas id="decision_distribution_over_time_ucb" width="400" height="200"></canvas>
+      </div>
       <h3>Variant Selection Distribution</h3>
-      <canvas id="decision_distribution_ucb" width="400" height="400" class="centered"></canvas>
+      <div>
+        Best variant is used and worst variant avoided most of the time.
+      </div>
+      <div>
+        <canvas id="decision_distribution_ucb" width="400" height="400" class="centered"></canvas>
+      </div>
       <h3>Results</h3>
       <p>Total: $<strong><span id="total_ucb"></span></strong></p>
       <p>

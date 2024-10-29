@@ -18,7 +18,7 @@
 <link href="/css/template.css" rel="stylesheet">
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script defer src="regret.js"></script>
+  <script defer src="context.js"></script>
   <style>
     .centered {
       margin-left: auto;
@@ -74,35 +74,19 @@
       <a href="/blog/dynenv/index.html">Part three - Dynamic Environments</a>
     </p> 
     <p>
-      When a variant is chosen that is not the best variant, we experience opportunity loss. For example
-      if our best variant converts at 0.9 and we choose a variant that converts at 0.7, we experience 0.2
-      units of regret. In the context of clicks per view over 100 views, you would lose a potential of
-      20 clicks. This amount is referred to as <strong>regret</strong>. We can evaluate algorithms by their
-      regret accumulation patterns. 
+      Contextual bandits allow us to segment an audience and run an experiment per context.
+      A context is a description of a situation. A context is made up of one or more variables.
     </p>
-  
-    <p>
-      For each algorithm we track cumulative regret over time. The horizon is extended to 3000 trials.
-    </p>
-    
-    <div class="section">
-      <h3>
-        Average Regret Accumulation Over Time (200 trials)</h3>
-      <div>
-        <canvas id="regret_over_time" width="400" height="200"></canvas>
-      </div>
-      <h3>Observations</h3>
-      <p>
-        While e-greedy initially accumulates less regret, especially in the first ~1300 decisions, we observe
-        an inversion in the traces and UCB starting to accumulate less regret. E-greedy has <strong>linear</strong>
-        regret accumulation and UCB has <strong>asymptotic</strong> regret accumulation. This means that the more
-        decisions we make the more accurate our decisions are going to become. 
-      </p>
-    </div>
 
     <p>
-      <a href="/blog/dynenv/index.html">Part three - Dynamic Environments</a>
-    </p> 
+      In our example we will be testing four user experiences across Canada. Our data set is going to be a set
+      of conversion rates per province broken down by rural and urban. Generally we would run an experiment across
+      all of Canada while ignoring that there is variance in conversion between provinces and rural vs urban users.
+    </p>
+
+    <p>
+      The data set is a 20x4 array of floats. 10 for provinces and 2 for the region types.
+    </p>
   
     <p><a href="https://web.stanford.edu/class/psych209/Readings/SuttonBartoIPRLBook2ndEd.pdf">Read the text book</a></p>
 		
