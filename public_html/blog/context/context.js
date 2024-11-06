@@ -1,5 +1,27 @@
-// Array.from({length: 26}, (v, i) => [(Math.random() * (0.9 - 0.5) + 0.5).toFixed(2), (Math.random() * (0.9 - 0.5) + 0.5).toFixed(2), (Math.random() * (0.9 - 0.5) + 0.5).toFixed(2), (Math.random() * (0.9 - 0.5) + 0.5).toFixed(2)])
+const colors = [
+  "255, 179, 186", // Pastel Red
+  "186, 255, 255", // Pastel Cyan
+  "186, 255, 201", // Pastel Green
+  "255, 186, 255", // Pastel Magenta
+  "255, 255, 186", // Pastel Yellow
+  "223, 223, 255", // Pastel Lavender
+  "223, 255, 186", // Pastel Lime
+  "255, 223, 255", // Pastel Pink
+  "255, 223, 186", // Pastel Orange
+  "186, 223, 255", // Pastel Blue
+  "255, 186, 223", // Pastel Rose
+  "223, 255, 223", // Pastel Mint
+  "255, 255, 223", // Pastel Cream
+  "223, 186, 255", // Pastel Purple
+  "186, 255, 223", // Pastel Aqua
+  "255, 223, 223", // Pastel Peach
+  "223, 255, 255", // Pastel Sky
+  "255, 223, 186", // Pastel Apricot
+  "223, 186, 223", // Pastel Mauve
+  "186, 223, 186", // Pastel Moss
+];
 
+// Array.from({length: 26}, (v, i) => [(Math.random() * (0.9 - 0.5) + 0.5).toFixed(2), (Math.random() * (0.9 - 0.5) + 0.5).toFixed(2), (Math.random() * (0.9 - 0.5) + 0.5).toFixed(2), (Math.random() * (0.9 - 0.5) + 0.5).toFixed(2)])
 const conversions = [
   ["0.69", "0.69", "0.53", "0.53"],
   ["0.61", "0.73", "0.66", "0.53"],
@@ -49,60 +71,206 @@ const regions = ["rural", "urban"];
 
 const numVariants = 4;
 
-const buildKey = (provinceName, regionName) => `${provinceName}-${regionName}`;
+const getContext = (elementId) => {
+  return document.getElementById(elementId).getContext("2d");
+};
 
-const randomIndex = (arr) => Math.floor(Math.random() * arr.length);
+const zipAllWith = (arrays) => {
+  const length = arrays[0].length;
 
-const conversionIndex = (provinceIndex, regionIndex) =>
-  provinceIndex * regions.length + regionIndex;
+  // Create the result array
+  const result = [];
 
-const selectVariantEGreedy = (contextKey, model) => {
-  let variantCounters = model[contextKey];
-
-  if (!variantCounters) {
-    model[contextKey] = Array.from({ length: numVariants }, () => ({
-      pulls: 0,
-      rewards: 0,
-    }));
-
-    variantCounters = model[contextKey];
+  for (let i = 0; i < length; i++) {
+    // Collect elements from each array at the current index i
+    const zipGroup = arrays.map((arr) => arr[i]);
+    result.push(zipGroup);
   }
 
-  // todo variant selection
+  return result;
+};
+
+const runSimulation = async (config) =>
+  new Promise((resolve) => {
+    const worker = new Worker("/blog/lib/mab/worker2.js");
+    worker.postMessage(config);
+
+    worker.addEventListener("message", function (e) {
+      worker.terminate();
+      resolve(e.data);
+    });
+  });
+
+const cumulativeSum = (arr) => {
+  const result = [];
+  let total = 0;
+
+  arr.forEach((value, i) => {
+    total += value;
+
+    result[i] = total;
+  });
+
+  return result;
+};
+
+function getColor(value) {
+  // Convert string to number
+  const num = parseFloat(value);
+
+  // Normalize the value between 0 and 1 based on range 0.6 to 0.9
+  const normalized = (num - 0.5) / (0.9 - 0.5);
+
+  // Create a light blue to dark blue gradient
+  // Light blue RGB: 173, 216, 230
+  // Dark blue RGB: 0, 0, 139
+
+  const red = Math.round(173 * (1 - normalized));
+  const green = Math.round(216 * (1 - normalized));
+  const blue = Math.round(230 - (230 - 139) * normalized);
+
+  return `rgb(${red}, ${green}, ${blue})`;
+}
+
+function createTable(divId, data) {
+  const table = document.createElement("table");
+
+  data.forEach((row) => {
+    const tr = document.createElement("tr");
+
+    row.forEach((cell, cellIndex) => {
+      const td = document.createElement("td");
+      td.textContent = cell;
+      if (cellIndex > 0) {
+        td.style.backgroundColor = getColor(cell);
+
+        // Set text color based on background brightness
+        const value = parseFloat(cell);
+        td.style.color = value < 0.75 ? "black" : "white";
+      }
+
+      tr.appendChild(td);
+    });
+
+    table.appendChild(tr);
+  });
+
+  document.getElementById(divId).appendChild(table);
+}
+
+const contextDescription = (index) => {
+  const provinceIndex = Math.floor(index / regions.length);
+  const regionIndex = index % regions.length;
+  return `${provinces[provinceIndex]} - ${regions[regionIndex]}`;
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
-  console.log(conversions);
-  console.log(provinces);
-  console.log(regions);
+  const numTrials = 10; // todo add average charts
+  const horizon = 10000;
+  const numVariants = 4;
+  const selectionStrategies = ["e_greedy", "ucb"];
 
-  const model = {};
-  const numTrials = 10;
+  const conversionAverages = zipAllWith(conversions)
+    .map((variantConversions) =>
+      variantConversions.reduce((sum, num) => sum + parseFloat(num), 0)
+    )
+    .map((total) => (total / conversions.length).toFixed(2));
 
-  const iterate = (counter, limit) => {
-    const provinceIndex = randomIndex(provinces);
-    const regionIndex = randomIndex(regions);
+  createTable(
+    "variantTableContainer",
+    conversions.map((conversion, conversionIndex) => [
+      contextDescription(conversionIndex),
+      ...conversion,
+    ])
+  );
 
-    const provinceName = provinces[provinceIndex];
-    const regionName = regions[regionIndex];
+  createTable("variantAveragesTableContainer", [
+    ["National", ...conversionAverages],
+  ]);
 
-    const contextConversions =
-      conversions[conversionIndex(provinceIndex, regionIndex)];
-    const contextKey = buildKey(provinceName, regionName);
+  const nationalResults = await Promise.all(
+    selectionStrategies.map((selectionStrategy) =>
+      runSimulation({
+        numVariants,
+        horizon,
+        selectionStrategy,
+        aggregationLevel: "national",
+        environment: { conversions, provinces, regions },
+      })
+    )
+  );
 
-    console.log(provinceName, regionName, buildKey(provinceName, regionName));
-    console.log(
-      provinceIndex,
-      regionIndex,
-      conversionIndex(provinceIndex, regionIndex)
+  nationalResults.forEach((result, selectionStrategyIndex) => {
+    const selectionStrategy = selectionStrategies[selectionStrategyIndex];
+    const conversionOverTimeChart = new Chart(
+      getContext(`conversions_over_time_${selectionStrategy}`),
+      {
+        type: "line",
+        data: {
+          labels: Array.from({ length: horizon }, (_, i) => i + 1),
+          datasets: Array.from({ length: numVariants }, (_, variantIndex) => ({
+            label: `V${variantIndex} (${conversionAverages[variantIndex]})`,
+            data: [],
+            borderColor: `rgba(${colors[variantIndex % colors.length]}, 1)`,
+          })),
+        },
+        options: {
+          animation: false,
+        },
+      }
     );
 
-    const variant = selectVariantEGreedy(contextKey, model);
+    Array.from({ length: numVariants }, (_, variantIndex) => {
+      conversionOverTimeChart.config.data.datasets[variantIndex].data =
+        result.variantConversionSeries[variantIndex];
+    });
 
-    if (counter < limit) {
-      iterate(counter + 1, limit);
-    }
-  };
+    conversionOverTimeChart.update();
+  });
 
-  iterate(0, numTrials);
+  const contextualResults = await Promise.all(
+    selectionStrategies.map((selectionStrategy) =>
+      runSimulation({
+        numVariants,
+        horizon,
+        selectionStrategy,
+        aggregationLevel: "context",
+        environment: { conversions, provinces, regions },
+      })
+    )
+  );
+
+  const cumulativeRegret = new Chart(getContext(`cumulative_regret`), {
+    type: "line",
+    data: {
+      labels: Array.from({ length: horizon }, (_, i) => i + 1),
+      datasets: [
+        {
+          label: "National e-greedy",
+          data: cumulativeSum(nationalResults[0].regretSeries),
+          borderColor: `rgba(${colors[0]}, 1)`,
+        },
+        {
+          label: "Contextual e-greedy",
+          data: cumulativeSum(contextualResults[0].regretSeries),
+          borderColor: `rgba(${colors[1]}, 1)`,
+        },
+        {
+          label: "National UCB",
+          data: cumulativeSum(nationalResults[1].regretSeries),
+          borderColor: `rgba(${colors[2]}, 1)`,
+        },
+        {
+          label: "Contextual UCB",
+          data: cumulativeSum(contextualResults[1].regretSeries),
+          borderColor: `rgba(${colors[3]}, 1)`,
+        },
+      ],
+    },
+    options: {
+      animation: false,
+    },
+  });
+
+  cumulativeRegret.update();
 });

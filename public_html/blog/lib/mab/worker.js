@@ -70,9 +70,6 @@ function runSimulation({
   const distributions = Array.from({ length: maxNumVariants }, () =>
     Array.from({ length: horizon })
   );
-  const windowedDistributions = Array.from({ length: maxNumVariants }, () =>
-    Array.from({ length: horizon })
-  );
 
   const selections = new Array(horizon);
   const occurrence = new Array(maxNumVariants).fill(0);

@@ -32,6 +32,21 @@
     p {
       font-size: large;
     }
+
+    
+    table {
+      border-collapse: collapse;
+      margin: 0px auto;
+      font-family: system-ui, sans-serif;
+    }
+    
+    td {
+      padding: 12px;
+      border: 1px solid #ccc;
+      text-align: center;
+      min-width: 60px;
+    }
+
   </style>
 </head>
 
@@ -74,6 +89,9 @@
       <a href="/blog/dynenv/index.html">Part three - Dynamic Environments</a>
     </p> 
     <p>
+      <a href="/blog/context/index.html">Part four - Contextual Bandits</a>
+    </p>
+    <p>
       Contextual bandits allow us to segment an audience and run an experiment per context.
       A context is a description of a situation. A context is made up of one or more variables.
     </p>
@@ -84,9 +102,81 @@
       all of Canada while ignoring that there is variance in conversion between provinces and rural vs urban users.
     </p>
 
+    <h2>Conversion Rates Per Context</h2>
     <p>
-      The data set is a 20x4 array of floats. 10 for provinces and 2 for the region types.
+      The data set is a 20x4 array of conversion rates. 13 for provinces and territories
+      and 2 for the region types. Conversions range from 0.5 to 0.9. Each conversion
+      rate is calculated independently.
     </p>
+    <div id="variantTableContainer"></div>
+
+    <h2>National View - Column Average</h2>
+    <p>
+      The column average represents the conversion rates if we didn't take into account
+      the context when selecting variants. Notice how homogenous the conversion rates
+      are. It is not clear which one is best. The best one according to this view
+      is often not the best in the context. For example, QC - rural, v3 has a conversion
+      of 0.53 whereas v2 has conversion of 0.88 which is much higher.
+    </p>
+    <div id="variantAveragesTableContainer"></div>
+
+    <div class="section">
+      <h2>National View Conversions</h2>
+      <p>We know the average conversion rates across all of our contexts</p>
+      
+      <h3>
+        Variant Conversions Over Time E-Greedy
+      </h3>
+      <p>
+        More noise at the beginning.
+      </p>
+      <div>
+        <canvas id="conversions_over_time_e_greedy" width="400" height="200"></canvas>
+      </div>
+
+      <h3>
+        Variant Conversions Over Time UCB
+      </h3>
+      <p>
+        Approximately half the amount of time to converge on conversion rates.
+      </p>
+      <div>
+        <canvas id="conversions_over_time_ucb" width="400" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Contextual vs National View</h2>
+      <p>
+        We can visualize the accumulation of regret. In this case regret is calculated
+        as the difference in conversion rate of the best variant in a context and 
+        the conversion rate of the variant selected.
+      </p>
+
+      <p>
+        In the national case, even if the system picks the best variant, that variant
+        is not the best variant in that context.
+      </p>
+      
+      <h3>
+        Cumulative Regret Over Time National vs Contextual By Algorithm
+      </h3>
+      <p>
+        Using the contextual approach we see smaller regret accumulation than the 
+        national approach. This mean we are using the best converting variant
+        more often because of contextual information.
+      </p>
+      <p>
+        In the short term contextual e-greedy looks really good. In the long
+        run contextual UCB starts to outperform contextual e-greedy. In this example
+        this happens around half a million iterations.
+      </p>
+      <div>
+        <canvas id="cumulative_regret" width="400" height="200"></canvas>
+      </div>
+
+      
+    </div>
   
     <p><a href="https://web.stanford.edu/class/psych209/Readings/SuttonBartoIPRLBook2ndEd.pdf">Read the text book</a></p>
 		
