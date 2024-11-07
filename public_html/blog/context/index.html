@@ -79,6 +79,7 @@
 
 	<div class="container">
     <h1>Multi-Armed Bandits</h1>
+    <h2>Contextual Bandits</h2>
     <p>
       <a href="/blog/mab/index.html">Part one - The Casino</a>
     </p>
@@ -91,9 +92,19 @@
     <p>
       <a href="/blog/context/index.html">Part four - Contextual Bandits</a>
     </p>
+
+    <p>
+      We have four experiences and are operating in all provinces and territories. It may be the 
+      case that there are some variants that work better for certain regions. If we test in a certain
+      region the sample sizes are small, it's hard to know how long to run the experiments. 
+    </p>
+
     <p>
       Contextual bandits allow us to segment an audience and run an experiment per context.
-      A context is a description of a situation. A context is made up of one or more variables.
+      A context is a description of a situation. A context is made up of one or more variables that 
+      describe that situation. For example the format {province}-{region} takes on values such as AB-rural.
+      For the national case all contexts are described as canada. Which means all pulls and rewards are accumulated
+      in one context. 
     </p>
 
     <p>
@@ -101,6 +112,21 @@
       of conversion rates per province broken down by rural and urban. Generally we would run an experiment across
       all of Canada while ignoring that there is variance in conversion between provinces and rural vs urban users.
     </p>
+
+    <h2>National View</h2>
+    <p>
+      The national view represents the conversion rates if we didn't take into account
+      the context when selecting variants. Notice how homogenous the conversion rates
+      are. It is not clear which one is best. This would be a result of typical A/B test.
+    </p>
+    <p>
+      During that A/B test we collected the data and were able to segment the conversions by geographical
+      location of the user. This view segments the audience into 20 categories. The best variant according to this 
+      view is often not the best in the context. 
+      For example, QC - rural, v3 has a conversion of 0.53 whereas v2 has conversion 
+      of 0.88 which is much higher.
+    </p>
+    <div id="variantAveragesTableContainer"></div>
 
     <h2>Conversion Rates Per Context</h2>
     <p>
@@ -110,25 +136,27 @@
     </p>
     <div id="variantTableContainer"></div>
 
-    <h2>National View - Column Average</h2>
+    
+
+    <h2>Implementation</h2>
     <p>
-      The column average represents the conversion rates if we didn't take into account
-      the context when selecting variants. Notice how homogenous the conversion rates
-      are. It is not clear which one is best. The best one according to this view
-      is often not the best in the context. For example, QC - rural, v3 has a conversion
-      of 0.53 whereas v2 has conversion of 0.88 which is much higher.
+      We are going to have a map keyed by a context name that is composed of a province name and region.
+      This gives us a unique set of variant conversions from the conversions table. Pulls and rewards are 
+      stored in the values of the map for each variant. This means that each context gets it's own experiment.
     </p>
-    <div id="variantAveragesTableContainer"></div>
 
     <div class="section">
       <h2>National View Conversions</h2>
-      <p>We know the average conversion rates across all of our contexts</p>
+      <p>
+        This is how the variant conversions evolve over time. Both algorithms are good at approximating
+        the variant conversion rates.
+      </p>
       
       <h3>
         Variant Conversions Over Time E-Greedy
       </h3>
       <p>
-        More noise at the beginning.
+        Noisy at the beginning. Converges over time.
       </p>
       <div>
         <canvas id="conversions_over_time_e_greedy" width="400" height="200"></canvas>
@@ -176,6 +204,72 @@
       </div>
 
       
+    </div>
+
+    <div class="section">
+      <h2>Rewards</h2>
+      <p>
+        We can track when we receive rewards. Ultimately the goal of this system is maximize rewards.
+      </p>
+      <h3>  
+        Cumulative Reward
+      </h3>
+      <p>
+        Contextual e-greedy looks to get the most amount of reward in short term.
+      </p>
+      <div>
+        <canvas id="cumulative_reward" width="400" height="200"></canvas>
+      </div>
+
+      
+    </div>
+
+    <div class="section">
+      <h2>System Performance</h2>
+      <p>
+        If we had this dataset when we were making decisions, each time we had to choose a variant for a context, we
+        would find the best converting variant and use it. If we did that we can calculate the average of the 
+        best conversions across all of our contexts. This gives <strong>0.79</strong>. This is the best we can do.
+      </p>
+      <p>
+        If we relied on traditional A/B testing we would productize V3 with a conversion rate of <strong>0.70</strong>.
+        This represents the baseline of a single variant with any optimization.
+      </p>
+
+      <h3>  
+        Conversion Over Time
+      </h3>
+      <p>
+        Show how the conversion changes by algorithm and context description.
+      </p>
+      <p>
+        The national conversions are below the baseline. This is because some exploration is required which costs
+        some conversion. From the national perspective we can't do better than the best converting variant which 
+        is 0.70. In the contextual case e-greedy outperforms UCB in the short term. UCB will approach the optimal
+        line and e-greedy will be parallel to it in the long run.
+      </p>
+      <div>
+        <canvas id="conversions" width="400" height="200"></canvas>
+      </div>
+
+      
+    </div>
+
+    <div class="section">
+      <h2>Conclusion</h2>
+      <p>
+        Our example looked at a problem at two different levels of granularity. By segmenting the
+        audience we found that different experiences convert differently in different regions.
+        By running an experiment per context using contextual multi-armed bandits, we were able to gain conversion
+        and come close to the optimally achievable conversion rate. The longer the horizon the better decisions
+        this system will make. 
+      </p>
+
+      <p>
+        Generally the conversion rate of the best performing algorithm, contextual e-greedy (at least in the short
+        term), reaches a 
+        conversion rate of 0.75 to 0.77. Which is a 7 to 10 percent uplift.
+      </p>
     </div>
   
     <p><a href="https://web.stanford.edu/class/psych209/Readings/SuttonBartoIPRLBook2ndEd.pdf">Read the text book</a></p>

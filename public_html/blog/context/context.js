@@ -176,6 +176,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     )
     .map((total) => (total / conversions.length).toFixed(2));
 
+  const bestAverageConversion =
+    conversions
+      .map((conversion) => Math.max(...conversion.map((a) => parseFloat(a))))
+      .reduce((sum, num) => sum + parseFloat(num), 0) / conversions.length;
+
+  console.log(bestAverageConversion);
+
   createTable(
     "variantTableContainer",
     conversions.map((conversion, conversionIndex) => [
@@ -240,6 +247,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     )
   );
 
+  const actualConversionRate = contextualResults[0].totalReward / horizon;
+
+  console.log(actualConversionRate);
+
   const cumulativeRegret = new Chart(getContext(`cumulative_regret`), {
     type: "line",
     data: {
@@ -272,5 +283,83 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
   });
 
-  cumulativeRegret.update();
+  const cumulativeReward = new Chart(getContext(`cumulative_reward`), {
+    type: "line",
+    data: {
+      labels: Array.from({ length: horizon }, (_, i) => i + 1),
+      datasets: [
+        {
+          label: "National e-greedy",
+          data: cumulativeSum(nationalResults[0].rewardSeries),
+          borderColor: `rgba(${colors[0]}, 1)`,
+        },
+        {
+          label: "Contextual e-greedy",
+          data: cumulativeSum(contextualResults[0].rewardSeries),
+          borderColor: `rgba(${colors[1]}, 1)`,
+        },
+        {
+          label: "National UCB",
+          data: cumulativeSum(nationalResults[1].rewardSeries),
+          borderColor: `rgba(${colors[2]}, 1)`,
+        },
+        {
+          label: "Contextual UCB",
+          data: cumulativeSum(contextualResults[1].rewardSeries),
+          borderColor: `rgba(${colors[3]}, 1)`,
+        },
+      ],
+    },
+    options: {
+      animation: false,
+    },
+  });
+
+  const conversionsChart = new Chart(getContext(`conversions`), {
+    type: "line",
+    data: {
+      labels: Array.from({ length: horizon }, (_, i) => i + 1),
+      datasets: [
+        {
+          label: "Best (0.79)",
+          data: Array.from({ length: horizon }, () => 0.79),
+          borderColor: `rgba(${colors[0]}, 1)`,
+        },
+        {
+          label: "National Best (0.70)",
+          data: Array.from({ length: horizon }, () => 0.7),
+          borderColor: `rgba(${colors[1]}, 1)`,
+        },
+        {
+          label: "National E-greedy",
+          data: nationalResults[0].conversionSeries,
+          borderColor: `rgba(${colors[2]}, 1)`,
+        },
+        {
+          label: "National UCB",
+          data: nationalResults[1].conversionSeries,
+          borderColor: `rgba(${colors[3]}, 1)`,
+        },
+        {
+          label: "Contextual E-greedy",
+          data: contextualResults[0].conversionSeries,
+          borderColor: `rgba(${colors[4]}, 1)`,
+        },
+        {
+          label: "Contextual UCB",
+          data: contextualResults[1].conversionSeries,
+          borderColor: `rgba(${colors[5]}, 1)`,
+        },
+      ],
+    },
+    options: {
+      animation: false,
+      scales: {
+        y: {
+          min: 0.65,
+          max: 0.82,
+        },
+      },
+    },
+  });
 });

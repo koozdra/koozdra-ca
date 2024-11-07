@@ -72,6 +72,9 @@ function runSimulation({
   );
   const selectionSeries = new Array(horizon);
   const regretSeries = new Array(horizon);
+  const rewardSeries = new Array(horizon);
+  const conversionSeries = new Array(horizon);
+  let totalReward = 0;
 
   for (let counter = 0; counter < horizon; counter++) {
     const provinceIndex = randomIndex(provinces);
@@ -105,7 +108,13 @@ function runSimulation({
     const isReward = Math.random() < contextConversions[variant.id];
     if (isReward) {
       model[contextKey][variant.id].rewards += 1;
+      rewardSeries[counter] = 1;
+      totalReward += 1;
+    } else {
+      rewardSeries[counter] = 0;
     }
+
+    conversionSeries[counter] = totalReward / (counter + 1);
 
     selectionSeries[counter] = variant.id;
     model[contextKey].forEach((variant, variantIndex) => {
@@ -114,5 +123,14 @@ function runSimulation({
     });
   }
 
-  self.postMessage({ selectionSeries, variantConversionSeries, regretSeries });
+  // const t = model.values().map((variantCounters) => )
+
+  self.postMessage({
+    selectionSeries,
+    variantConversionSeries,
+    regretSeries,
+    rewardSeries,
+    totalReward,
+    conversionSeries,
+  });
 }
