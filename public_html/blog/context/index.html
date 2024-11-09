@@ -256,6 +256,115 @@
     </div>
 
     <div class="section">
+      <h2>The Value Of a Variant</h2>
+      <p>
+        For variant iteration we need to identify which variants should be removed. For each context
+        we will have one of two situations; the variant we are considering is the current best or
+        it is not. If we remove the best variant in a context, then the second best variant would be used.
+        For contexts where the variant is not the winner it wouldn't affect the experiment if
+        it was removed. In the best variant scenario the difference in conversion between
+        the best and second best variants can be summed across contexts to find relative contribution.
+      </p>
+
+      <p>
+        For each variant we take the contextual conversion rates and set the variants conversion
+        to zero. Then find the best possible average conversion rate across contexts.
+      </p>
+
+      <h3>  
+        Best Achievable Conversion Rate - Single Variant
+      </h3>
+
+      <p>
+        The results show that removing any one of the variants would result in a lose in possibly
+        achievable conversion rate. <strong>V1</strong> is the most important. Without it, our maximum
+        achievable conversion drops by the most when removed.
+      </p>
+
+      <table>
+        <tbody>
+        <tr>
+          <td>V0</td><td>0.781</td>
+        </tr>
+        <tr>
+          <td>V1</td><td>0.778</td>
+        </tr>
+        <tr>
+          <td>V2</td><td>0.780</td>
+        </tr>
+        <tr>
+          <td>V3</td><td>0.780</td>
+        </tr>
+      </tbody>
+      </table>
+
+      <h3>  
+        Best Achievable Conversion Rate - Multiple Variants
+      </h3>
+
+      <p>
+        The results show that removing more than one of the variants would also result in a lose in possibly
+        achievable conversion rate. The loss is greater with this number of variants removed.
+        Only two variant removal is explored here because removing three variants is just the 
+        column average (national view). Removing four variants
+        doesn't make sense.
+      </p>
+
+      <table>
+        <tr>
+            <td>V0 V1</td>
+            <td>0.756</td>
+        </tr>
+        <tr>
+            <td>V0 V2</td>
+            <td>0.758</td>
+        </tr>
+        <tr>
+            <td>V0 V3</td>
+            <td>0.742</td>
+        </tr>
+        <tr>
+            <td>V1 V2</td>
+            <td>0.748</td>
+        </tr>
+        <tr>
+            <td>V1 V3</td>
+            <td>0.745</td>
+        </tr>
+        <tr>
+            <td>V2 V3</td>
+            <td>0.747</td>
+        </tr>
+      </table>
+
+      <h3>  
+        Variant Gained Conversion Across Contexts
+      </h3>
+
+      <p>
+        <strong>V1</strong> finds the most amount of conversion across the contexts.
+      </p>
+      <table>
+        <tr>
+          <td>V0</td>
+          <td>0.38</td>
+        </tr>
+        <tr>
+          <td>V1</td>
+          <td>0.47</td>
+        </tr>
+        <tr>
+          <td>V2</td>
+          <td>0.40</td>
+        </tr>
+        <tr>
+          <td>V3</td>
+          <td>0.41</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="section">
       <h2>Conclusion</h2>
       <p>
         Our example looked at a problem at two different levels of granularity. By segmenting the

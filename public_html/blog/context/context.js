@@ -164,6 +164,11 @@ const contextDescription = (index) => {
   return `${provinces[provinceIndex]} - ${regions[regionIndex]}`;
 };
 
+const findBestAverageConversions = (conversions) =>
+  conversions
+    .map((conversion) => Math.max(...conversion.map((a) => parseFloat(a))))
+    .reduce((sum, num) => sum + parseFloat(num), 0) / conversions.length;
+
 document.addEventListener("DOMContentLoaded", async () => {
   const numTrials = 10; // todo add average charts
   const horizon = 10000;
@@ -176,12 +181,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     )
     .map((total) => (total / conversions.length).toFixed(2));
 
-  const bestAverageConversion =
-    conversions
-      .map((conversion) => Math.max(...conversion.map((a) => parseFloat(a))))
-      .reduce((sum, num) => sum + parseFloat(num), 0) / conversions.length;
+  const bestAverageConversion = findBestAverageConversions(conversions);
 
-  console.log(bestAverageConversion);
+  console.log(`best average conversion: ${bestAverageConversion}`);
+
+  for (let i = 0; i < numVariants; i++) {
+    const variantRemovedConversions = conversions.map((conversion) => {
+      const a = [...conversion];
+      a[i] = 0;
+      return a;
+    });
+
+    const t = findBestAverageConversions(variantRemovedConversions);
+    console.log(`V${i}: ${t.toFixed(2)}`);
+  }
+
+  for (let i = 0; i < numVariants - 1; i++) {
+    for (let j = i + 1; j < numVariants; j++) {
+      const variantRemovedConversions = conversions.map((conversion) => {
+        const a = [...conversion];
+        a[i] = 0;
+        a[j] = 0;
+        return a;
+      });
+
+      const t = findBestAverageConversions(variantRemovedConversions);
+      console.log(`V${i} V${j}: ${t.toFixed(2)}`);
+    }
+  }
+
+  for (let i = 0; i < numVariants; i++) {
+    const q = conversions
+      .map((conversion) => {
+        const a = [...conversion.map(parseFloat)];
+        a[i] = 0;
+        return Math.max(parseFloat(conversion[i]) - Math.max(...a), 0);
+      })
+      .reduce((sum, num) => sum + num, 0);
+
+    console.log(`V${i}: ${q.toFixed(2)}`);
+  }
 
   createTable(
     "variantTableContainer",
@@ -249,7 +288,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const actualConversionRate = contextualResults[0].totalReward / horizon;
 
-  console.log(actualConversionRate);
+  console.log("actual conversion rate: " + actualConversionRate);
 
   const cumulativeRegret = new Chart(getContext(`cumulative_regret`), {
     type: "line",
