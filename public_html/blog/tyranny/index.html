@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="description" content="Dimitri Tishchenko's personal page.">
+<meta name="author" content="Dimitri Tishchenko">
+
+
+<title>Dimitri Tishchenko - Descent Into Mathness</title>
+
+<!-- Bootstrap core CSS -->
+<link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Custom styles for this template -->
+<link href="/css/template.css" rel="stylesheet">
+
+  <style>
+    .centered {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    div.section {
+      margin-bottom: 100px;
+    }
+
+    p {
+      font-size: large;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: 0px auto;
+      font-family: system-ui, sans-serif;
+      margin-bottom: 70px;
+      margin-top: 50px;
+    }
+    
+    td {
+      padding: 12px;
+      border: 1px solid #ccc;
+      text-align: center;
+      min-width: 60px;
+    }
+  </style>
+</head>
+
+<body>
+
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed"
+					data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+					aria-controls="navbar">
+					<span class="sr-only">Toggle navigation</span> <span
+						class="icon-bar"></span> <span class="icon-bar"></span> <span
+						class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="/index.html">Dimitri Tishchenko</a>
+			</div>
+			<div id="navbar" class="collapse navbar-collapse">
+				<ul class="nav navbar-nav">
+					<li><a href="/index.html">Home</a></li>
+					<li><a href="/projects/index.html">Projects</a></li>
+					<li class="active"><a href="/blog/index.html">Blog</a></li>
+					<li><a href="/photography/index.html">Photography</a></li>
+					<li><a href="/contact/index.html">Contact</a></li>
+				</ul>
+			</div>
+			<!--/.nav-collapse -->
+		</div>
+	</nav>
+
+	<div class="container">
+    <h1>Multi-Armed Bandits</h1>
+    <p>
+      <a href="/blog/mab/index.html">Part One - The Casino</a>
+    </p>
+    <p>
+      <a href="/blog/regret/index.html">Part Two - Regret</a>
+    </p> 
+    <p>
+      <a href="/blog/dynenv/index.html">Part Three - Dynamic Environments</a>
+    </p> 
+    <p>
+      <a href="/blog/context/index.html">Part Four - Contextual Bandits</a>
+    </p>
+    <p>
+      <a href="/blog/tyranny/index.html">Part Five - A/B Testing to Contextual Bandits</a>
+    </p>
+
+    <h1>The Tyranny of Averages</h1>
+    <h2>Iterative A/B Testing Is The Wrong Approach to User Experience Optimization</h2>
+
+    <p>
+      The goal of iterative A/B testing is to test user experiences against each other and find the best
+      converting variant. This is typically done by creating several variants, segmenting the audience
+      (or a portion) into buckets and collecting results on some taken action. Some use the concept
+      of statistical significance to determine when to stop the experiment and use
+      the best converting experience moving forward. This process can be repeated with new variants
+      to try to find a better converting variant. This process is tedious, laborious and error prone.
+      Could we automate the process and realize gains that were previously unreachable?
+    </p>
+
+    <p>
+      An automatic system would consist of an audience segmentation and a set of variants. This
+      system would use the context and counters that it maintains per variant for those contexts 
+      to make decisions about which variant should be used. It would try to use the best converting
+      variant in every context as often as possible. All of these requirements are fulfilled by
+      contextual multi-armed bandits.
+    </p>
+
+    <h2>A/B Testing Problems</h2>
+
+    <h3>
+      1. The Tyranny of Average
+    </h3>
+
+    <p>
+      The tyranny of average is a saying that says that averages hide a lot of detail.
+      Averages also hide outliers. A/B testing is typically done in a part of the 
+      product with a portion of the total audience. This unsegmented observation leaves out details
+      about how variants performed per context.
+    </p>
+
+    <p>
+      Consider the following A/B test result.
+    </p>
+
+    <p>
+      V0 to V3 are three four different variants. The averages are shown broken down by some
+      audience segmentation which gives us three contexts.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <td></td>
+          <td>V0</td>
+          <td>V1</td>
+          <td>V2</td>
+          <td>V3</td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Context 1</td>
+          <td>0.40</td>
+          <td>0.70</td>
+          <td>0.55</td>
+          <td>0.90</td>
+        </tr>
+        <tr>
+          <td>Context 2</td>
+          <td>0.60</td>
+          <td>0.66</td>
+          <td>0.73</td>
+          <td>0.60</td>
+        </tr>
+        <tr>
+          <td>Context 3</td>
+          <td>0.90</td>
+          <td>0.61</td>
+          <td>0.63</td>
+          <td>0.60</td>
+        </tr>
+        <tr>
+          <td>Average</td>
+          <td>0.63</td>
+          <td>0.65</td>
+          <td>0.63</td>
+          <td>0.70</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Looking at the averages across our variants we see that V3 is the highest converting variant. 
+      If this was the result in an A/B test you would conclude that this is the best variant.
+      Looking at the broken down data by context we see that V3 is the best variant because it is
+      a very high conversion rate for context 1. We see that in context 2 and context 3 V3 does quite
+      poorly. Also notice that in context 3 we could have gotten a much higher conversion with V0.
+    </p>
+
+    <p>
+      Ideally we would like a system that is able to use the context to choose the best variant.
+      In context 1, we would like to choose V3 as much as possible.
+      In context 3, we would like to choose V0 as much as possible.
+    </p>
+
+    <p>
+      Looking at just the averages we see that if we used V3 all the time, we would have a system
+      conversion rate of 0.70. However if we have a system that is able to use the best variant
+      given the context, we can now do as good as the best converting given the variant. In
+      this case, for context 1 the best converting variant is V3 with 0.90. For context 3, the
+      best converting variant is V0 with 0.90. The average of the best conversion rates across
+      contexts is 0.84. This is would be a huge uplift if a system could use the best variant 
+      per context.
+    </p>
+    
+
+    <h3>2. The Temporal Extrapolation Fallacy</h3>
+
+    <p>
+      It might not be the case that the results of our A/B test would have the same result if
+      we ran the same experiment years apart. This might be because of different traffic patterns
+      or a demographic shift, perhaps societal sentiment shifts. This can be confirmed with hold out 
+      groups, however, maintaining hold out groups long term on many experiments can be burdensome.
+    </p>
+
+    <p>
+      Ideally we want a system that can adapt to audience shifts. To adapt it would need to
+      constantly be running and be making decisions about which variant to choose.
+    </p>
+
+    <h3>3. Enough Data to Iterate</h3>
+
+    <p>
+      Typically the concept of statistical significance is used to determine if we have data
+      to stop the experiment and start again with a new set of variants. The concept of
+      statistical significance is rooted in 
+      <a href="https://www.youtube.com/watch?v=qJcv7VHwqcA" target="_blank">frequentism</a>.
+      This may be correct most of the time.
+    </p>
+
+    <p>
+      An ideal system would not depend on statistical significance.
+    </p>
+
+    <h2>
+      Testing -> Optimization
+    </h2>
+
+    <h3>
+      1. The Tyranny of Average
+    </h3>
+
+    <p>
+      Contextual multi-armed bandits maintain counters per variant per context.
+      This way the best variant per context can be chosen for that context.
+    </p>
+
+    <h3>2. The Temporal Extrapolation Fallacy</h3>
+
+    <p>
+      The system runs continually. Over time it collects counters to make better decisions. It
+      works with dynamic environments in this case mainly audience sentiment shifts to the variants.
+    </p>
+
+    <h3>3. Enough Data to Iterate</h3>
+
+    <p>
+      The system does not require statistical significance. Since it is constantly running and
+      can adapt the decision on when to iterate on variants is not necessary. 
+    </p>
+
+    <h2>Conclusion</h2>
+
+    <p>
+      Reframing optimal audience experience for maximal conversion as a decision problem, we can
+      apply contextual multi-armed bandits to automate an existing A/B testing system. Iterative
+      variant iteration would also be possible.
+    </p>
+
+    <p>
+      Contextual multi-armed bandit systems can yield previously unrealized conversion gains because
+      it is optimizing per context.
+    </p>
+  
+	</div>
+	<!-- /.container -->
+
+
+	<!-- Bootstrap core JavaScript
+    ================================================== -->
+	<!-- Placed at the end of the document so the pages load faster -->
+	<script
+		src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<script src="/bootstrap/js/bootstrap.min.js"></script>
+
+
+
+</body>
+</html>
