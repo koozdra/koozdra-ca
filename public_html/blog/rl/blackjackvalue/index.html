@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="description" content="Dimitri Tishchenko's personal page.">
+<meta name="author" content="Dimitri Tishchenko">
+
+
+<title>Dimitri Tishchenko - Descent Into Mathness</title>
+
+<!-- Bootstrap core CSS -->
+<link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Custom styles for this template -->
+<link href="/css/template.css" rel="stylesheet">
+<script defer src="blackjackvalue.js"></script>
+
+  <style>
+    .centered {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    div.section {
+      margin-bottom: 100px;
+    }
+
+    p {
+      font-size: large;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: 0px auto;
+      font-family: system-ui, sans-serif;
+      margin-bottom: 70px;
+      margin-top: 50px;
+    }
+    
+    td {
+      padding: 12px;
+      border: 1px solid #ccc;
+      text-align: center;
+      min-width: 60px;
+    }
+  </style>
+</head>
+
+<body>
+
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed"
+					data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+					aria-controls="navbar">
+					<span class="sr-only">Toggle navigation</span> <span
+						class="icon-bar"></span> <span class="icon-bar"></span> <span
+						class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="/index.html">Dimitri Tishchenko</a>
+			</div>
+			<div id="navbar" class="collapse navbar-collapse">
+				<ul class="nav navbar-nav">
+					<li><a href="/index.html">Home</a></li>
+					<li><a href="/projects/index.html">Projects</a></li>
+					<li class="active"><a href="/blog/index.html">Blog</a></li>
+					<li><a href="/photography/index.html">Photography</a></li>
+					<li><a href="/contact/index.html">Contact</a></li>
+				</ul>
+			</div>
+			<!--/.nav-collapse -->
+		</div>
+	</nav>
+
+	<div class="container">
+    <h1>The Value Of a Blackjack Strategy</h1>
+
+    <p>If we pick a strategy for blackjack, how good is it to be in each state of the decision space.</p>
+
+    <h2>Decision Space</h2>
+
+    <p>
+      The state representation captures the players total, the dealer's showing card and if the
+      players hand has a useable ace. If the player total is less than 12, it makes sense to always hit
+      so there is no decision to be made. This means the player total can take on values from 12 to 21.
+      The dealers showing card can be a number from 1 to 10. A useable ace is captured as a boolean. 
+    </p>
+
+    <p>
+      [[12-21], [1-10], [true, false]]: 200 states
+    </p>
+
+    <p>
+      The reward is 1 for a win, 0 for a draw and -1 for a loss. This is an undiscounted reward model
+      where reward during an episode is 0 and only the final reward is counted. This means that we are
+      taking the terminal reward and adding it to the average for each state.
+    </p>
+
+    <h2>Dealer</h2>
+
+    <p>
+      The dealer hits up to a total of 16.
+    </p>
+
+    <h2>
+      State Value Visualization
+    </h2>
+
+    <p>
+      This table shows the average reward that is achieved in each state. Each cell ranges from -1 to 1.
+    </p>
+
+    <div>
+      <button class="btn btn-primary" id="button_start">Start</button>
+      <button class="btn btn-primary" id="button_stop">Stop</button>
+      <button class="btn btn-primary" id="button_clear">Clear</button>
+    </div>
+    <div>
+      <p>
+        Strategies
+      </p>
+      <button class="btn btn-primary" id="button_strat_max_hit_19">Max Hit 19</button>
+      <button class="btn btn-primary" id="button_strat_max_hit_18">Max Hit 18</button>
+      <button class="btn btn-primary" id="button_strat_max_hit_17">Max Hit 17</button>
+      <button class="btn btn-primary" id="button_strat_max_hit_16">Max Hit 16</button>
+      <button class="btn btn-primary" id="button_strat_max_hit_15">Max Hit 15</button>
+      <button class="btn btn-primary" id="button_strat_max_hit_14">Max Hit 14</button>
+      <button class="btn btn-primary" id="button_strat_max_hit_13">Max Hit 13</button>
+
+      <p>
+        Strategy: Hit Max <span id="span_strategy_hit_max">19</span>
+      </p>
+    </div>
+
+    <table id="table_state_values">
+    </table>
+    
+    <p>
+      Total Trials: <span id="span_total_trials">0</span>
+    </p>
+
+    <h2>
+      Policy Improvement
+    </h2>
+
+    <div>
+      <button class="btn btn-primary" id="button_policy_improvement_start">Start</button>
+      <button class="btn btn-primary" id="button_policy_improvement_stop">Stop</button>
+    </div>
+
+    <table id="table_state_best_action"></table>
+
+    <table id="table_state_action_values"></table>
+
+  
+	</div>
+	<!-- /.container -->
+
+
+	<!-- Bootstrap core JavaScript
+    ================================================== -->
+	<!-- Placed at the end of the document so the pages load faster -->
+	<script
+		src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<script src="/bootstrap/js/bootstrap.min.js"></script>
+
+
+
+</body>
+</html>
