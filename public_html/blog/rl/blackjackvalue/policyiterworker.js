@@ -83,11 +83,14 @@ function runSimulation({ numTrials, stateValues, stateActionValues }) {
       stateAction
     );
 
-    // console.log(stateAction, episode, reward);
+    // const [[a, b, c], d] = stateAction;
+    // if (a === 18 && b === 9 && c === true) {
+    //   console.log(stateAction, episode, reward);
+    // }
 
     episode.forEach((stateAction) => {
       const stateActionKey = stateActionValueKey(stateAction);
-      const [state, action] = stateAction;
+      const [state, _takenAction] = stateAction;
 
       // console.log(stateAction);
       // console.log(state);
@@ -103,9 +106,9 @@ function runSimulation({ numTrials, stateValues, stateActionValues }) {
 
       stateValues.set(
         stateKey,
-        argmax((action) => {
-          let stateActionValue = stateActionValues.get(
-            stateActionValueKey([...state, action])
+        argmax((possibleAction) => {
+          const stateActionValue = stateActionValues.get(
+            stateActionValueKey([state, possibleAction])
           );
 
           if (stateActionValue) {

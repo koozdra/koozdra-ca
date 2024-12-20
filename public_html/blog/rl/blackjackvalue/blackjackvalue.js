@@ -102,7 +102,7 @@ const writeStateActionValueTable = (data, table) => {
                           [playerTotal, dealerCard, usableAce],
                           action,
                         ];
-                        const [state, _action] = stateAction;
+
                         const key = stateActionValueKey(stateAction);
                         const value = data.get(key);
                         const [count, total] = value ? value : [0, 0];
@@ -232,8 +232,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     writeTable(stateValues, document.getElementById("table_state_values"));
   });
 
-  Array.from({ length: 7 }, (_, i) => {
-    const hitMax = i + 13;
+  Array.from({ length: 9 }, (_, i) => {
+    const hitMax = i + 11;
     document
       .getElementById(`button_strat_max_hit_${hitMax}`)
       .addEventListener("click", () => {
@@ -260,7 +260,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (iterRunning) {
       policyIterWorker.postMessage({
-        numTrials: 100,
+        numTrials: 100000,
         stateValues: iterStateValues,
         stateActionValues,
       });
@@ -273,7 +273,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!iterRunning) {
         iterRunning = true;
         policyIterWorker.postMessage({
-          numTrials: 100,
+          numTrials: 100000,
           stateValues: iterStateValues,
           stateActionValues,
         });
