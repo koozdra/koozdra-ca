@@ -32,7 +32,10 @@ function runSimulation({
   dealerHitMax,
 }) {
   for (i = 0; i < numSimulations; i++) {
-    const [episode, reward] = generateEpisode(playerHitMax, dealerHitMax);
+    const [episode, reward] = generateEpisode((state) => {
+      const [playerTotal, _dealerCard, _usableAce] = state;
+      return playerTotal <= playerHitMax ? "hit" : "stick";
+    }, dealerHitMax);
     // console.log(episode);
     updateStateValues(episode, reward, stateValues);
   }

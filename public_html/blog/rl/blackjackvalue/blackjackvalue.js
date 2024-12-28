@@ -109,7 +109,7 @@ const writeStateActionValueTable = (data, table) => {
                         const average = count > 0 ? total / count : 0;
                         return `<td style="background-color:${getColorFromValue(
                           average
-                        )}">${average.toFixed(2)}</td>`;
+                        )}">${average.toFixed(2)} (${count})</td>`;
                       }).join("")}
                   </tr>
               `;
@@ -118,7 +118,11 @@ const writeStateActionValueTable = (data, table) => {
   table.innerHTML = tableHTML;
 };
 
-const writeStateOptimalActionTable = (data, table) => {
+const writeStateOptimalActionTable = (
+  stateActions,
+  stateActionValues,
+  table
+) => {
   let tableHTML = `
           <tr>
               <th>Player Total</th>
@@ -146,7 +150,10 @@ const writeStateOptimalActionTable = (data, table) => {
                   const dealerCard = (colIndex % 10) + 1;
                   const state = [playerTotal, dealerCard, usableAce];
                   const key = stateValueKey(state);
-                  const value = data.get(key);
+                  const value = stateActions.get(key);
+
+                  // const stateActionValue =
+
                   switch (value) {
                     case "hit":
                       return `<td style="background-color:rgb(255, 182, 193)">H</td>`;
@@ -189,6 +196,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   writeTable(stateValues, document.getElementById("table_state_values"));
   writeStateOptimalActionTable(
     iterStateValues,
+    stateActionValues,
     document.getElementById("table_state_best_action")
   );
   writeStateActionValueTable(
@@ -250,6 +258,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     writeStateOptimalActionTable(
       sv,
+      sav,
       document.getElementById("table_state_best_action")
     );
 

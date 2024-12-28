@@ -72,10 +72,11 @@ const rewardAfterDealer = (playersCards, dealersCards) => {
 };
 
 const generateEpisodeFrom = (
-  playerHitMax,
+  playerPolicyF,
   dealerHitMax,
   playersCards,
-  dealerCard
+  dealerCard,
+  ignoreNatural
 ) => {
   let dealersCards = [dealerCard];
   // let playersCards = [randomCard(), randomCard()];
@@ -85,23 +86,48 @@ const generateEpisodeFrom = (
   // console.log(`Start: ${handTotal(playersCards)} ${playersCards}`);
 
   let episode = [];
+  const log = false;
 
   // Natural
-  if (isHandWin(playersCards)) {
-    // console.log(`Natural: ${playersCards} ${hasUsableAce(playersCards)}`);
+  if (isHandWin(playersCards) && !ignoreNatural) {
     dealersCards = [...dealersCards, randomCard()];
+    const reward = isHandWin(dealersCards) ? 0 : 1;
+    if (log)
+      console.log(
+        `Natural: ${playersCards} ${hasUsableAce(
+          playersCards
+        )} dealer: ${dealersCards} reward: ${reward}`
+      );
     return [
       [...episode, [stateKey(dealersCards, playersCards), "stick"]],
-      isHandWin(dealersCards) ? 0 : 1,
+      reward,
     ];
   }
 
   let playerTotal = handTotal(playersCards);
 
-  if (playerTotal > playerHitMax) {
-    episode = [...episode, [stateKey(dealersCards, playersCards), "stick"]];
-  } else {
-    while (playerTotal <= playerHitMax) {
+  // if (playerTotal > playerHitMax) {
+  //   episode = [...episode, [stateKey(dealersCards, playersCards), "stick"]];
+  // } else {
+  let done = false;
+  while (!done) {
+    const playerPolicyAction = playerPolicyF(
+      stateKey(dealersCards, playersCards)
+    );
+
+    if (log)
+      console.log(
+        `loop: ${playersCards} ${dealersCards} ${stateKey(
+          dealersCards,
+          playersCards
+        )} ${playerPolicyAction}`
+      );
+
+    if (playerPolicyAction === "stick") {
+      done = true;
+
+      episode = [...episode, [stateKey(dealersCards, playersCards), "stick"]];
+    } else {
       if (playerTotal >= 12) {
         episode = [...episode, [stateKey(dealersCards, playersCards), "hit"]];
       }
@@ -111,39 +137,67 @@ const generateEpisodeFrom = (
       // console.log(`Hit: ${card}, ${handTotal(playersCards)} ${playersCards}`);
       playerTotal = handTotal(playersCards);
 
-      if (playerTotal > playerHitMax && playerTotal <= 21) {
-        episode = [...episode, [stateKey(dealersCards, playersCards), "stick"]];
+      // if (playerTotal <= 21) {
+      //   done = true;
+      //   episode = [...episode, [stateKey(dealersCards, playersCards), "stick"]];
+      // }
+
+      if (isHandBust(playersCards)) {
+        // console.log(`Bust!!`);
+        done = true;
       }
     }
   }
+  // }
 
   if (isHandBust(playersCards)) {
     // console.log(`Bust!!`);
+    if (log) console.log(`Bust: ${playersCards} ${dealersCards} ${episode}`);
     return [episode, -1];
   }
 
-  dealersCards = runDealer(dealerHitMax, dealersCards);
-  return [episode, rewardAfterDealer(playersCards, dealersCards)];
+  dealersCards = runDealer(dealerHitMax, dealersCards, playersCards);
+  const reward = rewardAfterDealer(playersCards, dealersCards);
+  if (log) console.log(`Result: ${episode} ${reward}`);
+  return [episode, reward];
 };
 
-const runDealer = (dealerHitMax, dealersCards) => {
+// dealer should not hit if they are already above players total
+const runDealer = (dealerHitMax, dealersCards, playersCards) => {
   let dealerTotal = handTotal(dealersCards);
-  while (dealerTotal <= dealerHitMax) {
+  let playerTotal = handTotal(playersCards);
+  let log = [];
+  log = [...log, `Dealer: ${dealersCards} ${dealerTotal}`];
+  while (dealerTotal <= dealerHitMax && dealerTotal < playerTotal) {
     const card = randomCard();
     dealersCards = [...dealersCards, card];
 
     // console.log(
-    //   `Dealer Hit: ${card}, ${handTotal(dealersCards)} ${dealersCards}`
+    //   `Dealer: Hit: ${card}, ${handTotal(dealersCards)} ${dealersCards}`
     // );
+    log = [
+      ...log,
+      `Dealer: Hit: ${card}, ${handTotal(dealersCards)} ${dealersCards}`,
+    ];
     dealerTotal = handTotal(dealersCards);
   }
+
+  log = [
+    ...log,
+    `Dealer: done Dealer(${dealersCards} ${dealerTotal}) Player(${playersCards} ${playerTotal}) reward:${rewardAfterDealer(
+      playersCards,
+      dealersCards
+    )}`,
+  ];
+
+  // console.log(log);
 
   return dealersCards;
 };
 
-const generateEpisode = (playerHitMax, dealerHitMax) =>
+const generateEpisode = (playerPolicyF, dealerHitMax) =>
   generateEpisodeFrom(
-    playerHitMax,
+    playerPolicyF,
     dealerHitMax,
     [randomCard(), randomCard()],
     randomCard()
