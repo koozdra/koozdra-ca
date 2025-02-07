@@ -2,14 +2,14 @@
 function Point(x, y) {
   return {
     x: x,
-    y: y
+    y: y,
   };
 }
 
 function ViewPort(tl, br) {
   return {
     tl: tl,
-    br: br
+    br: br,
   };
 }
 
@@ -18,13 +18,22 @@ function Color(r, g, b, a) {
     r: r,
     g: g,
     b: b,
-    a: a
+    a: a,
   };
 }
-// Types ---------------------------------------------
 
+const Colors = {
+  black: Color(0, 0, 0, 255),
+  white: Color(255, 255, 255, 255),
+};
+
+// Helper math functions
 function complexAbs(p) {
   return Math.sqrt(Math.pow(p.x, 2) + Math.pow(p.y, 2));
+}
+
+function rangeAt(a, b, x) {
+  return a + (b - a) * x;
 }
 
 function colorRangeAt(c1, c2, z) {
@@ -36,17 +45,12 @@ function colorRangeAt(c1, c2, z) {
   );
 }
 
-const Colors = {
-  black: Color(0, 0, 0, 255),
-  white: Color(255, 255, 255, 255)
-};
-
+// Canvas setup ---------------------------------------------
 function setUpCanvas(ctx, canvas) {
   // messy canvas crap
   if (window.devicePixelRatio > 1) {
     setUpCanvasDimensions(canvas);
   }
-  //------------------------------------------------
 }
 
 function setUpCanvasDimensions(canvas) {
@@ -55,29 +59,29 @@ function setUpCanvasDimensions(canvas) {
 
   canvas.width = canvasWidth * window.devicePixelRatio;
   canvas.height = canvasHeight * window.devicePixelRatio;
-  canvas.style.width = canvasWidth + 'px';
-  canvas.style.height = canvasHeight + 'px';
+  canvas.style.width = canvasWidth + "px";
+  canvas.style.height = canvasHeight + "px";
 }
 
+// Initial state setup ---------------------------------------------
 function initialState(canvas) {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   const ctxScale = window.devicePixelRatio;
 
   setUpCanvas(ctx, canvas);
 
   const width = canvas.width;
   const height = canvas.height;
-  const bufferRow = ctx.createImageData(width, 1);
+  // Create a full-canvas image data buffer
+  const bufferAll = ctx.createImageData(width, height);
 
   return {
-    bufferRow,
+    bufferAll,
     ctx,
     canvas,
     ctxScale,
     width,
     height,
-    bufferRowData: bufferRow.data,
-    bufferPixel: ctx.createImageData(1, 1),
     viewPort: ViewPort(
       Point(-width / 2, height / 2),
       Point(width / 2, -height / 2)
@@ -86,14 +90,15 @@ function initialState(canvas) {
     rank: {
       timeout: 2500,
       steps: 23,
-      colors: [Colors.black, Colors.white]
+      colors: [Colors.black, Colors.white],
     },
     interactions: {
-      click: 'zoomIn'
-    }
+      click: "zoomIn",
+    },
   };
 }
 
+// Mandelbrot calculation ---------------------------------------------
 function mandelbrotRank(state, point) {
   var i = 0,
     zx = point.x,
@@ -116,19 +121,6 @@ function mandelbrotRank(state, point) {
   return { rank: i, zn: Point(zx, zy) };
 }
 
-function drawPixel(state, point, color) {
-  state.bufferPixel.data[0] = color.r;
-  state.bufferPixel.data[1] = color.g;
-  state.bufferPixel.data[2] = color.b;
-  state.bufferPixel.data[3] = color.a;
-
-  state.ctx.putImageData(state.bufferPixel, point.x, point.y);
-}
-
-function rangeAt(a, b, x) {
-  return a + (b - a) * x;
-}
-
 function rankColor(state, point) {
   var { rank, zn } = mandelbrotRank(state, point);
 
@@ -138,61 +130,13 @@ function rankColor(state, point) {
     const currentColor = state.rank.colors[div % state.rank.colors.length];
     const destColor = state.rank.colors[(div + 1) % state.rank.colors.length];
 
-    // const nsmooth = rank + 1 - Math.log(Math.log(complexAbs(zn))) / Math.log(2);
-
-    // return colorRangeAt(currentColor, destColor, mod / state.rank.steps);
     return colorRangeAt(currentColor, destColor, mod / state.rank.steps);
   } else {
     return Colors.black;
   }
 }
 
-function drawRow(state, y) {
-  var ctxRow = state.ctx.createImageData(state.width, 1),
-    ctxRowData = ctxRow.data;
-
-  drawRow = function(state, y) {
-    if (state.canvas.width != ctxRow.width) {
-      ctxRow = state.ctx.createImageData(state.canvas.width, 1);
-      ctxRowData = ctxRow.data;
-    }
-
-    _.times(state.width, function(x) {
-      var point = Point(x, y);
-
-      var mappedPoint = mapIntoViewPort(state, point, state.viewPort);
-
-      var color = rankColor(state, mappedPoint);
-
-      ctxRowData[4 * x] = color.r;
-      ctxRowData[4 * x + 1] = color.g;
-      ctxRowData[4 * x + 2] = color.b;
-      ctxRowData[4 * x + 3] = color.a;
-    });
-    state.ctx.putImageData(ctxRow, 0, y);
-  };
-
-  drawRow(state, y);
-}
-
-function drawByRow(state) {
-  state.renderState = {
-    y: 0
-  };
-
-  function drawByRowInner(state) {
-    const renderState = state.renderState;
-    drawRow(state, renderState.y);
-
-    if (renderState.y < state.height - 1) {
-      renderState.y += 1;
-      requestAnimationFrame(_.partial(drawByRowInner, state));
-    }
-  }
-
-  requestAnimationFrame(_.partial(drawByRowInner, state));
-}
-
+// Mapping functions ---------------------------------------------
 function mapIntoViewPort(state, point, viewPort) {
   return Point(
     viewPort.tl.x + point.x * ((viewPort.br.x - viewPort.tl.x) / state.width),
@@ -200,24 +144,58 @@ function mapIntoViewPort(state, point, viewPort) {
   );
 }
 
-function centerViewPort(state, point, viewPort) {
-  var vxy = mapIntoViewPort(state, point, viewPort);
+// Randomized drawing routine ---------------------------------------------
+function drawRandomPixels(state) {
+  // Create an array of every pixel coordinate
+  const pixels = [];
+  for (let y = 0; y < state.height; y++) {
+    for (let x = 0; x < state.width; x++) {
+      pixels.push({ x: x, y: y });
+    }
+  }
+  // Shuffle the array randomly using underscore's _.shuffle
+  const shuffledPixels = _.shuffle(pixels);
 
-  return _.extend({}, viewPort, {
-    x: viewPort.x + vxy.x - viewPort.width / 2,
-    y: viewPort.y + vxy.y - viewPort.height / 2
-  });
+  // Set up render state to process a chunk at a time
+  state.renderState = {
+    pixels: shuffledPixels,
+    index: 0,
+    chunkSize: 100000, // adjust the chunk size to balance speed/responsiveness
+  };
+
+  function drawRandomInner() {
+    const rs = state.renderState;
+    const data = state.bufferAll.data;
+    const total = rs.pixels.length;
+
+    for (let i = 0; i < rs.chunkSize && rs.index < total; i++, rs.index++) {
+      const pt = rs.pixels[rs.index];
+      // Map the canvas coordinate to the viewport coordinate
+      const mappedPt = mapIntoViewPort(state, pt, state.viewPort);
+      const color = rankColor(state, mappedPt);
+      const idx = (pt.y * state.width + pt.x) * 4;
+      data[idx] = color.r;
+      data[idx + 1] = color.g;
+      data[idx + 2] = color.b;
+      data[idx + 3] = color.a;
+    }
+
+    state.ctx.putImageData(state.bufferAll, 0, 0);
+
+    if (rs.index < total) {
+      requestAnimationFrame(drawRandomInner);
+    }
+  }
+
+  requestAnimationFrame(drawRandomInner);
 }
 
+// Transition functions (zooming, panning) ---------------------------------------------
 function transition(state) {
-  // TODO
-  //var history = [];
-
-  // TODO clone state and store in history for all function calls
-
-  var centerZoomViewPort = _.curry(function(state, z) {
-    var dx = (state.viewPort.br.x - state.viewPort.tl.x) * (1 - z) / 2,
-      dy = (state.viewPort.br.y - state.viewPort.tl.y) * (1 - z) / 2;
+  // NOTE: a history of states could be stored here if desired.
+  var centerZoomViewPort = _.curry(function (state, z) {
+    var dx = ((state.viewPort.br.x - state.viewPort.tl.x) * (1 - z)) / 2,
+      dy = ((state.viewPort.br.y - state.viewPort.tl.y) * (1 - z)) / 2;
 
     state.viewPort = ViewPort(
       Point(state.viewPort.tl.x + dx, state.viewPort.tl.y + dy),
@@ -227,7 +205,7 @@ function transition(state) {
     return state;
   });
 
-  var centerViewPortAt = _.curry(function(state, point) {
+  var centerViewPortAt = _.curry(function (state, point) {
     var mp = mapIntoViewPort(state, point, state.viewPort),
       cx = (state.viewPort.br.x + state.viewPort.tl.x) / 2,
       cy = (state.viewPort.br.y + state.viewPort.tl.y) / 2,
@@ -242,35 +220,35 @@ function transition(state) {
     return state;
   });
 
-  var changeViewWindowSize = _.curry(function(state, width, height) {});
+  var changeViewWindowSize = _.curry(function (state, width, height) {
+    // TODO: implement changing view window size if needed
+  });
 
   return {
     centerZoomViewPort: centerZoomViewPort(state),
     centerViewPortAt: centerViewPortAt(state),
     changeViewWindowSize: changeViewWindowSize(state),
-    state: function() {
+    state: function () {
       return state;
-    }
+    },
   };
 }
 
+// Clear the canvas ---------------------------------------------
 function clear(state) {
-  // requestAnimationFrame(() => {
-  //   state.ctx.clearRect(0, 0, state.width, state.height);
-  // });
-
   state.ctx.clearRect(0, 0, state.width, state.height);
+  // Also clear our full-buffer by zeroing out its data.
+  for (let i = 0; i < state.bufferAll.data.length; i++) {
+    state.bufferAll.data[i] = 0;
+  }
 }
 
+// Main entry ---------------------------------------------
 function start() {
-  const canvas = document.getElementById('board');
+  const canvas = document.getElementById("board");
   let state = initialState(canvas);
 
-  d3.select(canvas).on('click', function(e) {
-    // if (state.renderState) {
-    //   state.renderState.active = false;
-    // }
-
+  d3.select(canvas).on("click", function (e) {
     clear(state);
 
     const mouse = d3.mouse(this);
@@ -280,31 +258,29 @@ function start() {
 
     var mappedPoint = mapIntoViewPort(state, point, state.viewPort);
 
-    d3.select('span.currentLocation').html(
+    d3.select("span.currentLocation").html(
       JSON.stringify({
         x: mappedPoint.x,
-        y: mappedPoint.y
+        y: mappedPoint.y,
       })
     );
 
     state = transition(state).centerViewPortAt(point);
 
-    if (state.interactions.click === 'zoomIn') {
+    if (state.interactions.click === "zoomIn") {
       state = transition(state).centerZoomViewPort(0.3);
-    } else if (state.interactions.click === 'zoomOut') {
+    } else if (state.interactions.click === "zoomOut") {
       state = transition(state).centerZoomViewPort(1.7);
     }
 
-    drawByRow(state);
+    drawRandomPixels(state);
   });
 
+  // initial zoom-in from a wide view:
   state = transition(state).centerZoomViewPort(0.02);
+  drawRandomPixels(state);
 
-  //state.viewPort = JSON.parse('{"tl":{"x":-1.7499333634530672,"y":7.200756595495622e-10},"br":{"x":-1.749933362802201,"y":3.0166153142956183e-10}}')
-
-  drawByRow(state);
-
-  const rangeIterationElement = document.getElementById('rangeIterations');
+  const rangeIterationElement = document.getElementById("rangeIterations");
   rangeIterationElement.onchange = iterations;
 
   return state;
@@ -314,16 +290,17 @@ var state = start();
 
 console.log(state);
 
+// UI functions ---------------------------------------------
 function clickModeZoomIn() {
-  state.interactions.click = 'zoomIn';
+  state.interactions.click = "zoomIn";
 }
 
 function clickModeZoomOut() {
-  state.interactions.click = 'zoomOut';
+  state.interactions.click = "zoomOut";
 }
 
 function clickModeCenter() {
-  state.interactions.click = 'center';
+  state.interactions.click = "center";
 }
 
 function resize(state, width, height) {
@@ -336,7 +313,10 @@ function resize(state, width, height) {
   state.canvas.height = height;
   setUpCanvas(state.ctx, state.canvas);
 
-  drawByRow(state);
+  // Create a new full-buffer for the updated canvas size.
+  state.bufferAll = state.ctx.createImageData(state.width, state.height);
+
+  drawRandomPixels(state);
 }
 
 function sizeXSmall() {
@@ -346,6 +326,7 @@ function sizeXSmall() {
 function sizeSmall() {
   resize(state, 280, 180);
 }
+
 function sizeMedium() {
   resize(state, 560, 360);
 }
@@ -365,9 +346,9 @@ function sizeCustom(x, y) {
 function generateImage() {
   var img = new Image();
   img.src = state.canvas.toDataURL();
-  const output = document.querySelector('div.imageOutput');
+  const output = document.querySelector("div.imageOutput");
 
-  output.appendChild(document.createElement('br'));
+  output.appendChild(document.createElement("br"));
   output.appendChild(img);
 
   img.width /= state.ctxScale;
@@ -375,7 +356,6 @@ function generateImage() {
 
 function iterations(e) {
   state.rank.timeout = parseInt(e.target.value);
-
   clear(state);
-  drawByRow(state);
+  drawRandomPixels(state);
 }

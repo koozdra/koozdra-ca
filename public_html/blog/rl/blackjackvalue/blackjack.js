@@ -1,4 +1,8 @@
-const randomCard = () => Math.floor(Math.random() * 10) + 1;
+// const randomCard = () => Math.floor(Math.random() * 10) + 1;
+const randomCard = () => {
+  const card = Math.floor(Math.random() * 13) + 1; // Uniformly pick 1-13
+  return card <= 9 ? card : 10;
+};
 const handHasAce = (cards) => cards.includes(1);
 const hasUsableAce = (cards) => {
   const aceIndex = cards.findIndex((a) => a === 1);
@@ -71,12 +75,16 @@ const rewardAfterDealer = (playersCards, dealersCards) => {
   return dealerTotal > playerTotal ? -1 : 1;
 };
 
+const randomAction = () => {
+  const possibleActions = ["hit", "stick"];
+  return possibleActions[Math.floor(Math.random() * possibleActions.length)];
+};
+
 const generateEpisodeFrom = (
   playerPolicyF,
   dealerHitMax,
   playersCards,
-  dealerCard,
-  ignoreNatural
+  dealerCard
 ) => {
   let dealersCards = [dealerCard];
   // let playersCards = [randomCard(), randomCard()];
@@ -86,42 +94,43 @@ const generateEpisodeFrom = (
   // console.log(`Start: ${handTotal(playersCards)} ${playersCards}`);
 
   let episode = [];
-  const log = false;
+  let log = [];
 
   // Natural
-  if (isHandWin(playersCards) && !ignoreNatural) {
-    dealersCards = [...dealersCards, randomCard()];
-    const reward = isHandWin(dealersCards) ? 0 : 1;
-    if (log)
-      console.log(
-        `Natural: ${playersCards} ${hasUsableAce(
-          playersCards
-        )} dealer: ${dealersCards} reward: ${reward}`
-      );
+  if (isHandWin(playersCards)) {
+    dealersCards = runDealer(dealerHitMax, dealersCards);
+    const reward = rewardAfterDealer(playersCards, dealersCards);
+
+    log = [
+      ...log,
+      `Natural: p:${playersCards} d:${dealersCards} sk:${stateKey(
+        dealersCards,
+        playersCards
+      )} reward: ${reward}`,
+    ];
+
     return [
       [...episode, [stateKey(dealersCards, playersCards), "stick"]],
       reward,
+      log,
     ];
   }
 
   let playerTotal = handTotal(playersCards);
 
-  // if (playerTotal > playerHitMax) {
-  //   episode = [...episode, [stateKey(dealersCards, playersCards), "stick"]];
-  // } else {
   let done = false;
   while (!done) {
     const playerPolicyAction = playerPolicyF(
       stateKey(dealersCards, playersCards)
     );
 
-    if (log)
-      console.log(
-        `loop: ${playersCards} ${dealersCards} ${stateKey(
-          dealersCards,
-          playersCards
-        )} ${playerPolicyAction}`
-      );
+    log = [
+      ...log,
+      `hit: p:${playersCards} d:${dealersCards} sk:${stateKey(
+        dealersCards,
+        playersCards
+      )} pol:${playerPolicyAction}`,
+    ];
 
     if (playerPolicyAction === "stick") {
       done = true;
@@ -134,63 +143,41 @@ const generateEpisodeFrom = (
 
       const card = randomCard();
       playersCards = [...playersCards, card];
-      // console.log(`Hit: ${card}, ${handTotal(playersCards)} ${playersCards}`);
+
+      log = [
+        ...log,
+        `Hit: ${card}, ${handTotal(playersCards)} ${playersCards}`,
+      ];
+
       playerTotal = handTotal(playersCards);
 
-      // if (playerTotal <= 21) {
-      //   done = true;
-      //   episode = [...episode, [stateKey(dealersCards, playersCards), "stick"]];
-      // }
-
       if (isHandBust(playersCards)) {
-        // console.log(`Bust!!`);
         done = true;
       }
     }
   }
-  // }
 
   if (isHandBust(playersCards)) {
-    // console.log(`Bust!!`);
-    if (log) console.log(`Bust: ${playersCards} ${dealersCards} ${episode}`);
-    return [episode, -1];
+    log = [...log, `Bust:  p:${playersCards} d:${dealersCards} r:-1`];
+
+    return [episode, -1, log];
   }
 
-  dealersCards = runDealer(dealerHitMax, dealersCards, playersCards);
+  dealersCards = runDealer(dealerHitMax, dealersCards);
   const reward = rewardAfterDealer(playersCards, dealersCards);
-  if (log) console.log(`Result: ${episode} ${reward}`);
-  return [episode, reward];
+
+  log = [...log, `Result:  p:${playersCards} d:${dealersCards} r:${reward}`];
+
+  return [episode, reward, log];
 };
 
-// dealer should not hit if they are already above players total
-const runDealer = (dealerHitMax, dealersCards, playersCards) => {
+const runDealer = (dealerHitMax, dealersCards) => {
   let dealerTotal = handTotal(dealersCards);
-  let playerTotal = handTotal(playersCards);
-  let log = [];
-  log = [...log, `Dealer: ${dealersCards} ${dealerTotal}`];
-  while (dealerTotal <= dealerHitMax && dealerTotal < playerTotal) {
-    const card = randomCard();
-    dealersCards = [...dealersCards, card];
 
-    // console.log(
-    //   `Dealer: Hit: ${card}, ${handTotal(dealersCards)} ${dealersCards}`
-    // );
-    log = [
-      ...log,
-      `Dealer: Hit: ${card}, ${handTotal(dealersCards)} ${dealersCards}`,
-    ];
+  while (dealerTotal <= dealerHitMax) {
+    dealersCards = [...dealersCards, randomCard()];
     dealerTotal = handTotal(dealersCards);
   }
-
-  log = [
-    ...log,
-    `Dealer: done Dealer(${dealersCards} ${dealerTotal}) Player(${playersCards} ${playerTotal}) reward:${rewardAfterDealer(
-      playersCards,
-      dealersCards
-    )}`,
-  ];
-
-  // console.log(log);
 
   return dealersCards;
 };

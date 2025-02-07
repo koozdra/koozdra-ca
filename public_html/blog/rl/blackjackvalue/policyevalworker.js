@@ -30,20 +30,63 @@ function runSimulation({
   stateValues,
   playerHitMax,
   dealerHitMax,
+  stateActionPolicy,
 }) {
+  let wins = 0;
+  let losses = 0;
+  let draws = 0;
+
+  const playerStrategyF = stateActionPolicy
+    ? (state) => {
+        const [playerTotal] = state;
+
+        if (playerTotal < 12) {
+          return "hit";
+        }
+
+        const key = stateValueKey(state);
+        const value = stateActionPolicy.get(key);
+
+        // if (!value) {
+        //   console.log(
+        //     "what",
+        //     state,
+        //     key,
+        //     stateActionPolicy.get(key),
+        //     stateActionPolicy
+        //   );
+        // }
+
+        return value ?? randomAction();
+      }
+    : (state) => {
+        const [playerTotal] = state;
+        return playerTotal <= playerHitMax ? "hit" : "stick";
+      };
+
   for (i = 0; i < numSimulations; i++) {
-    const [episode, reward] = generateEpisode((state) => {
-      const [playerTotal, _dealerCard, _usableAce] = state;
-      return playerTotal <= playerHitMax ? "hit" : "stick";
-    }, dealerHitMax);
+    const [episode, reward] = generateEpisode(playerStrategyF, dealerHitMax);
     // console.log(episode);
     updateStateValues(episode, reward, stateValues);
+    switch (reward) {
+      case -1:
+        losses += 1;
+        break;
+      case 0:
+        draws += 1;
+        break;
+      case 1:
+        wins += 1;
+        break;
+    }
   }
-
-  numTotalTrials += numSimulations;
 
   self.postMessage({
     stateValues,
-    numTotalTrials,
+    counters: {
+      wins,
+      losses,
+      draws,
+    },
   });
 }

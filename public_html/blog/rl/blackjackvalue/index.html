@@ -16,6 +16,7 @@
 
 <!-- Custom styles for this template -->
 <link href="/css/template.css" rel="stylesheet">
+<script defer src="blackjack.js"></script>
 <script defer src="blackjackvalue.js"></script>
 
   <style>
@@ -79,9 +80,16 @@
 	<div class="container">
     <h1>The Value Of a Blackjack Strategy</h1>
 
-    <p>If we pick a strategy for blackjack, how good is it to be in each state of the decision space.</p>
+    <p>
+      Sutton and Barto's Reinforcement Learning textbook describes a simplified
+      Blackjack game. If we pick a strategy for blackjack, 
+      how good is it to be in each state of the decision space.
+    </p>
 
     <h2>Decision Space</h2>
+
+    <img alt="Mangelbrot" src="/blog/images/bj.jpg"
+								class="img-responsive">
 
     <p>
       The state representation captures the players total, the dealer's showing card and if the
@@ -100,8 +108,6 @@
       taking the terminal reward and adding it to the average for each state.
     </p>
 
-    <h2>Dealer</h2>
-
     <p>
       The dealer hits up to a total of 16.
     </p>
@@ -111,54 +117,247 @@
     </h2>
 
     <p>
-      This table shows the average reward that is achieved in each state. Each cell ranges from -1 to 1.
+      What is the value of a state with the given reward structure.
+      This table shows the average reward that is achieved in each state. 
+      Each cell ranges from -1 to 1.
     </p>
+
+    <p>
+      We are going to generate episodes and observe the reward. For each state
+      encountered we are going to add the observed reward to average reward value
+      of the state.
+    </p>
+
+    <p>
+      Example: Given a strategy of "hit on 19"
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>State</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>Player Total: 13, Dealer Card: 5, Usable Ace: true, Action: Hit</td>
+        <td>
+          The player has a useable ace so their initial hand might have been
+          1,2 (an ace and a two). The player total is less than 19 so we hit.
+        </td>
+      </tr>
+      <tr>
+        <td>Player Total: 18, Dealer Card: 5, Usable Ace: true, Action: Hit</td>
+        <td>
+          We got a 5 and our total is now 18. This is less than 19 so we hit.
+        </td>
+      </tr>
+      <tr>
+        <td>Player Total: 17, Dealer Card: 5, Usable Ace: false, Action: Hit</td>
+        <td>
+          We got a 9 and our total is now 17. We had a useable ace that is now not
+          useable. This is less than 19 so we hit.
+        </td>
+      </tr>
+      <tr>
+        <td>Player Total: 21, Dealer Card: 5, Usable Ace: false, Action: Stick</td>
+        <td>
+          We got a 4 and our total is now 21. BLACKJACK!! Our total is over
+          19 so we stick.
+        </td>
+      </tr>
+      <tr>
+        <td>Dealer: Hit 5, 5</td>
+        <td>total: 10</td>
+      </tr>
+      <tr>
+        <td>Dealer: Hit 5, 5, 6</td>
+        <td>total: 16</td>
+      </tr>
+      <tr>
+        <td>Dealer: Hit 5, 5, 6, 5</td>
+        <td>total: 21</td>
+      </tr>
+      <tr>
+        <td>Reward: 0</td>
+        <td>Dealer matched our score. A tie.</td>
+      </tr>
+    </tbody>
+    </table>
+
+    <p>
+      For each state encountered (first four rows) we are going to update the
+      average with the reward we saw at the end of the game.
+    </p>
+
+    <h2>State Value Table</h2>
 
     <div>
       <button class="btn btn-primary" id="button_start">Start</button>
       <button class="btn btn-primary" id="button_stop">Stop</button>
       <button class="btn btn-primary" id="button_clear">Clear</button>
     </div>
-    <div>
-      <p>
-        Strategies
-      </p>
-      <button class="btn btn-primary" id="button_strat_max_hit_19">Max Hit 19</button>
-      <button class="btn btn-primary" id="button_strat_max_hit_18">Max Hit 18</button>
-      <button class="btn btn-primary" id="button_strat_max_hit_17">Max Hit 17</button>
-      <button class="btn btn-primary" id="button_strat_max_hit_16">Max Hit 16</button>
-      <button class="btn btn-primary" id="button_strat_max_hit_15">Max Hit 15</button>
-      <button class="btn btn-primary" id="button_strat_max_hit_14">Max Hit 14</button>
-      <button class="btn btn-primary" id="button_strat_max_hit_13">Max Hit 13</button>
-      <button class="btn btn-primary" id="button_strat_max_hit_12">Max Hit 12</button>
-      <button class="btn btn-primary" id="button_strat_max_hit_11">Max Hit 11</button>
+    <div style="margin-top: 10px; margin-bottom: 40px;">
+      <label for="numberInput">Hit Max:</label>
+      <input 
+          type="number" 
+          id="numberInput" 
+          value="19" 
+          min="11" 
+          max="19" 
+          onchange="handleMaxHitInputChange(event)"
+      >
 
-      <p>
-        Strategy: Hit Max <span id="span_strategy_hit_max">19</span>
-      </p>
+     
     </div>
 
-    <table id="table_state_values">
-    </table>
-    
     <p>
-      Total Trials: <span id="span_total_trials">0</span>
+      Strategy: Hit Max <span id="span_strategy_hit_max">19</span>
     </p>
 
+    <div id="policy_eval_hit_19">
+    </div>
+
+    <h2>Hit Max Strategy Win Rate and Cumulative Reward</h2>
+
+    <p>
+      I ran some simulations on the table above and copied the results when they looked
+      like they converged to a value.
+    </p>
+
+    <p>
+      Win rate goes up as you hit less. Cumulative reward peaks at 16 with a value of <strong>9.86</strong>.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Hit Max</th>
+          <th>Win Rate</th>
+          <th>Cumulative Reward</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>19</td>
+          <td>29.45</td>
+          <td>-49.16</td>
+        </tr>
+        <tr>
+          <td>18</td>
+          <td>35.99</td>
+          <td>-13.63</td>
+        </tr>
+        <tr>
+          <td>17</td>
+          <td>39.80</td>
+          <td>6.06</td>
+        </tr>
+        <tr>
+          <td>16</td>
+          <td>40.90</td>
+          <td>9.86</td>
+        </tr>
+        <tr>
+          <td>15</td>
+          <td>41.38</td>
+          <td>8.11</td>
+        </tr>
+        <tr>
+          <td>14</td>
+          <td>41.69</td>
+          <td>5.86</td>
+        </tr>
+        <tr>
+          <td>13</td>
+          <td>41.87</td>
+          <td>2.66</td>
+        </tr>
+        <tr>
+          <td>12</td>
+          <td>41.57</td>
+          <td>-2.26</td>
+        </tr>
+      </tbody>  
+    </table>
+
     <h2>
-      Policy Improvement
+      State Action Values
     </h2>
+
+    <p>
+      Above we store the average of the all observed rewards for states. We now
+      want to store an average for each state action pair. This allows us to make
+      a strategy (policy) by selecting the best action for each state. For each
+      state we will look at the state action pairs and pick the action that leads
+      to the highest expected reward.
+    </p>
+    <h2>State Action Table</h2>
+    <p>
+      Here we are going to use "explore starts". Since we are using our policy
+      to make decisions about which actions to take, we might not visit some
+      parts of the state space. To compensate for this we are going to select 
+      random moves and actions from those moves. The we take the action from the
+      selected state and continue the episode as before. The observed reward is then
+      used to update all the state actions in the episode, as above.
+    </p>
 
     <div>
       <button class="btn btn-primary" id="button_policy_improvement_start">Start</button>
       <button class="btn btn-primary" id="button_policy_improvement_stop">Stop</button>
     </div>
 
-    <table id="table_state_best_action"></table>
-
     <table id="table_state_action_values"></table>
 
-  
+    <h2>Optimal Action Per State</h2>
+    <p>
+      The best action to take in every state. This is generated by looking at the
+      table above and picking the action that leads to the best expected reward.
+    </p>
+    <table id="table_state_best_action"></table>
+
+
+    <h2>
+      Optimal State Action Values
+    </h2>
+    <p>
+      Just like selecting the best action we can also show max expected reward
+      given the best action. Like the table above, except not showing the best
+      action but showing the best expected value for any action.
+    </p>
+    <table id="table_state_best_state_action"></table>
+
+    <h2>
+      Evaluating The Optimal Policy
+    </h2>
+    <p>
+      Just like we evaluated the policy above, we can use the optimal policy
+      that we computed.
+    </p>
+    <div>
+      <button class="btn btn-primary" id="button_start_eval_optimal">Start</button>
+      <button class="btn btn-primary" id="button_stop_eval_optimal">Stop</button>
+    </div>
+    <div id="policy_eval_optimal">
+    </div>
+
+    <p>
+      The optimal policy has a win rate of 42.92 and a cumulative reward of <strong>18.78</strong>.
+    </p>
+
+    <h2>Conclusion:</h2>
+    <p>
+      The optimal policy backs up that sticking is best in most situations which
+      we saw above with the fixed hit max strategies. However there is nuance on
+      if you have a useable ace. 
+    </p>
+    <p>
+      In most cases explore starts is not an option since the state space
+      is too large to be able to visit all states. The next article will
+      look at strategies that can be used instead that balance exploration
+      and exploitation.
+    </p>
 	</div>
 	<!-- /.container -->
 

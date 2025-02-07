@@ -4,20 +4,6 @@ self.addEventListener("message", function (e) {
   runSimulation(e.data);
 });
 
-// const takeAction = (state, action) => {
-//   const [playerTotal, dealerCard, usableAce] = state;
-
-//   let playerCards = usableAce
-//     ? [1, playerTotal]
-//     : [Math.floor(playerTotal / 2), Math.ceil(playerTotal / 2)];
-
-//   // if (!usableAce) {
-//   //   return [playerTotal + Math.floor(Math.random() * (21 - playerTotal + 1)), dealerCard, usableAce];
-//   // } else {
-//   //   const shouldSwitchToUnusableAce = Math.random() >= 0.5
-
-//   // }
-// };
 const takeActionEpisode = (
   playerHitMax,
   dealerHitMax,
@@ -33,47 +19,41 @@ const takeActionEpisode = (
     ? [8, 8, 5]
     : [Math.floor(playerTotal / 2), Math.ceil(playerTotal / 2)];
 
-  // console.log(stateAction, playersCards, handTotal(playersCards));
-
   let dealersCards = [dealersCard];
 
-  const initialStateKey = stateKey(dealersCards, playersCards);
-
   if (action === "stick") {
-    dealersCards = runDealer(dealerHitMax, dealersCards, playersCards);
+    dealersCards = runDealer(dealerHitMax, dealersCards);
     const reward = rewardAfterDealer(playersCards, dealersCards);
     const episodeReward = [[stateAction], reward];
-    // console.log(
-    //   stateAction,
-    //   playersCards,
-    //   handTotal(playersCards),
-    //   episodeReward
-    // );
     return episodeReward;
   } else {
     const playerPolicyF = (state) => {
-      const action = stateValues.get(stateValueKey(state));
-      const isExplore = Math.random() < 0;
+      const [playerTotal] = state;
 
-      if (!action || isExplore) {
-        return Math.random() < 0.5 ? "hit" : "stick";
+      if (playerTotal < 12) {
+        return "hit";
       }
 
-      return action;
+      return stateValues.get(stateValueKey(state)) ?? randomAction();
     };
 
-    playersCards = [...playersCards, randomCard()];
+    const card = randomCard();
+    let log = [`HIT: ${card}`];
+    playersCards = [...playersCards, card];
     if (isHandBust(playersCards)) {
+      log = [...log, `BUST: p${playersCards}`];
+      // console.log(stateAction, playersCards, handTotal(playersCards), -1, log);
       return [[stateAction], -1];
     }
 
-    const [ep, reward] = generateEpisodeFrom(
+    const [ep, reward, innerLog] = generateEpisodeFrom(
       playerPolicyF,
       dealerHitMax,
       playersCards,
-      dealersCard,
-      true
+      dealersCard
     );
+
+    log = [...log, ...innerLog];
 
     const episodeReward = [[stateAction, ...ep], reward];
 
@@ -81,7 +61,8 @@ const takeActionEpisode = (
     //   stateAction,
     //   playersCards,
     //   handTotal(playersCards),
-    //   episodeReward
+    //   episodeReward,
+    //   log
     // );
     return episodeReward;
   }
@@ -92,6 +73,13 @@ const argmax = (f, arr) =>
     f(currentElement) > f(maxElement) ? currentElement : maxElement
   );
 
+function getRandomNumberInRange(lower, upper) {
+  if (lower > upper) {
+    throw new Error("Lower bound must be less than or equal to upper bound.");
+  }
+  return Math.floor(Math.random() * (upper - lower + 1)) + lower;
+}
+
 function runSimulation({ numTrials, stateValues, stateActionValues }) {
   const playerHitMax = 19;
   const dealerHitMax = 16;
@@ -99,7 +87,10 @@ function runSimulation({ numTrials, stateValues, stateActionValues }) {
 
   for (let i = 0; i < numTrials; i++) {
     const stateAction = randomStateAction();
-    // const stateAction = [[12, 5, false], Math.random() < 0.5 ? "hit" : "stick"];
+    // const stateAction = [
+    //   [getRandomNumberInRange(12, 21), 5, false],
+    //   Math.random() < 0.5 ? "hit" : "stick",
+    // ];
     // const stateAction = [
     //   [Math.floor(Math.random() * 10) + 12, 5, false],
     //   Math.random() < 0.5 ? "hit" : "stick",
@@ -114,7 +105,7 @@ function runSimulation({ numTrials, stateValues, stateActionValues }) {
 
     // let [[a, b, c], d] = stateAction;
     // if (a === 14 && b === 5 && c === false && d === "hit") {
-    //   console.log(stateAction, episode, reward);
+    // console.log(stateAction, episode, reward);
     // }
 
     episode.forEach((stateAction) => {
