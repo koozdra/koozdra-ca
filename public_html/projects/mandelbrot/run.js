@@ -98,22 +98,24 @@ function initialState(canvas) {
   };
 }
 
-// Mandelbrot calculation ---------------------------------------------
 function mandelbrotRank(state, point) {
   var i = 0,
     zx = point.x,
-    zy = point.y;
+    zy = point.y,
+    zx2 = zx * zx,
+    zy2 = zy * zy;
 
-  while (zx * zx + zy * zy < 4 && i < state.rank.timeout) {
-    var tx = zx * zx - zy * zy + point.x,
-      ty = 2 * zx * zy + point.y;
+  while (zx2 + zy2 < 4 && i < state.rank.timeout) {
+    var zy = 2 * zx * zy + point.y;
+    var zx = zx2 - zy2 + point.x;
 
-    if (tx === zx && ty === zy) {
+    // Update squared values for next iteration
+    zx2 = zx * zx;
+    zy2 = zy * zy;
+
+    if (zx === point.x && zy === point.y) {
       i = state.rank.timeout - 1;
     }
-
-    zx = tx;
-    zy = ty;
 
     i += 1;
   }
@@ -143,8 +145,25 @@ function mapIntoViewPort(state, point, viewPort) {
     viewPort.tl.y + point.y * ((viewPort.br.y - viewPort.tl.y) / state.height)
   );
 }
+// function mapIntoViewPort(state, pt, viewPort) {
+//   // Translate the point so that the viewport center is the origin.
+//   const localX = pt.x - viewPort.cx;
+//   const localY = pt.y - viewPort.cy;
 
-// Randomized drawing routine ---------------------------------------------
+//   // Scale the local coordinates by the zoom factor.
+//   const scaledX = localX * viewPort.zoom;
+//   const scaledY = localY * viewPort.zoom;
+
+//   // Optionally, if you need to position it back in canvas space:
+//   // For example, if the canvas center should correspond to viewPort.cx, viewPort.cy:
+//   const canvasCenterX = state.width / 2;
+//   const canvasCenterY = state.height / 2;
+//   return {
+//     x: canvasCenterX + scaledX,
+//     y: canvasCenterY + scaledY,
+//   };
+// }
+
 function drawRandomPixels(state) {
   // Create an array of every pixel coordinate
   const pixels = [];
@@ -160,15 +179,22 @@ function drawRandomPixels(state) {
   state.renderState = {
     pixels: shuffledPixels,
     index: 0,
-    chunkSize: 100000, // adjust the chunk size to balance speed/responsiveness
+    chunkSize: 100000, // initial chunk size
   };
 
   function drawRandomInner() {
     const rs = state.renderState;
     const data = state.bufferAll.data;
     const total = rs.pixels.length;
+    const startTime = performance.now();
+    const targetFrameTime = 60;
 
-    for (let i = 0; i < rs.chunkSize && rs.index < total; i++, rs.index++) {
+    // Process a chunk of pixels
+    // for (let i = 0; i < rs.chunkSize && rs.index < total; i++, rs.index++) {
+    while (
+      rs.index < total &&
+      performance.now() - startTime < targetFrameTime
+    ) {
       const pt = rs.pixels[rs.index];
       // Map the canvas coordinate to the viewport coordinate
       const mappedPt = mapIntoViewPort(state, pt, state.viewPort);
@@ -178,10 +204,13 @@ function drawRandomPixels(state) {
       data[idx + 1] = color.g;
       data[idx + 2] = color.b;
       data[idx + 3] = color.a;
+      rs.index++;
     }
 
+    // Update the canvas with the new pixel data.
     state.ctx.putImageData(state.bufferAll, 0, 0);
 
+    // If there are still pixels left, schedule the next frame.
     if (rs.index < total) {
       requestAnimationFrame(drawRandomInner);
     }
@@ -248,6 +277,47 @@ function start() {
   const canvas = document.getElementById("board");
   let state = initialState(canvas);
 
+  const params = new URLSearchParams(window.location.search);
+
+  const urlX = parseFloat(params.get("x"));
+  const urlY = parseFloat(params.get("y"));
+  const urlZoom = parseFloat(params.get("zoom"));
+
+  console.log(urlX, urlY, urlZoom);
+
+  if (urlX && urlY && urlZoom) {
+    // First, apply the zoom level
+    state = transition(state).centerZoomViewPort(urlZoom);
+    state.zoom = urlZoom;
+
+    // Now we need to center on the target coordinates
+    // The target coordinates are in the complex plane (mandelbrot space)
+    // We need to find which canvas pixel corresponds to those coordinates
+
+    // Calculate the center of the current viewport in complex plane
+    const vpCenterX = (state.viewPort.tl.x + state.viewPort.br.x) / 2;
+    const vpCenterY = (state.viewPort.tl.y + state.viewPort.br.y) / 2;
+
+    // Calculate the offset needed
+    const dx = urlX - vpCenterX;
+    const dy = urlY - vpCenterY;
+
+    // Apply the offset to center on the target point
+    state.viewPort = ViewPort(
+      Point(state.viewPort.tl.x + dx, state.viewPort.tl.y + dy),
+      Point(state.viewPort.br.x + dx, state.viewPort.br.y + dy)
+    );
+
+    // Update the display
+    d3.select("span.currentLocation").html(
+      JSON.stringify({
+        x: urlX,
+        y: urlY,
+        zoom: urlZoom,
+      })
+    );
+  }
+
   d3.select(canvas).on("click", function (e) {
     clear(state);
 
@@ -258,20 +328,19 @@ function start() {
 
     var mappedPoint = mapIntoViewPort(state, point, state.viewPort);
 
-    d3.select("span.currentLocation").html(
-      JSON.stringify({
-        x: mappedPoint.x,
-        y: mappedPoint.y,
-      })
-    );
-
     state = transition(state).centerViewPortAt(point);
 
     if (state.interactions.click === "zoomIn") {
       state = transition(state).centerZoomViewPort(0.3);
+      state.zoom *= 0.3;
     } else if (state.interactions.click === "zoomOut") {
       state = transition(state).centerZoomViewPort(1.7);
+      state.zoom *= 1.7;
     }
+
+    d3.select("span.currentLocation").html(
+      `x=${mappedPoint.x}&y=${mappedPoint.y}&zoom=${state.zoom}`
+    );
 
     drawRandomPixels(state);
   });
@@ -303,15 +372,36 @@ function clickModeCenter() {
   state.interactions.click = "center";
 }
 
+// function resize(state, width, height) {
+//   clear(state);
+
+//   state.width = width * state.ctxScale;
+//   state.height = height * state.ctxScale;
+
+//   state.canvas.width = width;
+//   state.canvas.height = height;
+//   setUpCanvas(state.ctx, state.canvas);
+
+//   // Create a new full-buffer for the updated canvas size.
+//   state.bufferAll = state.ctx.createImageData(state.width, state.height);
+
+//   drawRandomPixels(state);
+// }
+
 function resize(state, width, height) {
   clear(state);
 
-  state.width = width * state.ctxScale;
-  state.height = height * state.ctxScale;
+  // Set the canvas element dimensions (CSS size)
+  state.canvas.style.width = width + "px";
+  state.canvas.style.height = height + "px";
 
-  state.canvas.width = width;
-  state.canvas.height = height;
-  setUpCanvas(state.ctx, state.canvas);
+  // Set the actual canvas buffer dimensions (scaled for device pixel ratio)
+  state.canvas.width = width * state.ctxScale;
+  state.canvas.height = height * state.ctxScale;
+
+  // Update state dimensions
+  state.width = state.canvas.width;
+  state.height = state.canvas.height;
 
   // Create a new full-buffer for the updated canvas size.
   state.bufferAll = state.ctx.createImageData(state.width, state.height);
@@ -345,13 +435,18 @@ function sizeCustom(x, y) {
 
 function generateImage() {
   var img = new Image();
-  img.src = state.canvas.toDataURL();
   const output = document.querySelector("div.imageOutput");
+
+  // Set the src
+  img.src = state.canvas.toDataURL();
+
+  // Wait for the image to load before setting its width
+  img.onload = function () {
+    img.width = img.naturalWidth / state.ctxScale;
+  };
 
   output.appendChild(document.createElement("br"));
   output.appendChild(img);
-
-  img.width /= state.ctxScale;
 }
 
 function iterations(e) {
