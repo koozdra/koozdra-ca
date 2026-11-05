@@ -1,83 +1,64 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<meta name="description" content="Dimitri Tishchenko's personal page.">
-<meta name="author" content="Dimitri Tishchenko">
-
-
-<title>Dimitri Tishchenko - Descent Into Mathness</title>
-
-<!-- Bootstrap core CSS -->
-<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
-
-<!-- Custom styles for this template -->
-<link href="/css/template.css" rel="stylesheet">
-<script defer src="blackjack.js"></script>
-<script defer src="blackjackvalue.js"></script>
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Value of a Blackjack Strategy · Dimitri Tishchenko</title>
+  <meta name="description" content="Reinforcement learning on Sutton and Barto's simplified blackjack, visualized as heatmaps of the state space.">
+  <meta name="author" content="Dimitri Tishchenko">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="/css/site.css">
+  <script defer src="blackjack.js"></script>
+  <script defer src="blackjackvalue.js"></script>
   <style>
-    .centered {
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    div.section {
-      margin-bottom: 100px;
-    }
-
-    p {
-      font-size: large;
-    }
-
-    table {
-      border-collapse: collapse;
-      margin: 0px auto;
-      font-family: system-ui, sans-serif;
-      margin-bottom: 70px;
-      margin-top: 50px;
-    }
-    
-    td {
-      padding: 12px;
-      border: 1px solid #ccc;
-      text-align: center;
-      min-width: 60px;
-    }
-  </style>
+      .centered {
+        margin-left: auto;
+        margin-right: auto;
+      }
+  
+      div.section {
+        margin-bottom: 100px;
+      }
+  
+      p {
+        font-size: large;
+      }
+  
+      table {
+        border-collapse: collapse;
+        margin: 0px auto;
+        font-family: system-ui, sans-serif;
+        margin-bottom: 70px;
+        margin-top: 50px;
+      }
+  
+      td {
+        padding: 12px;
+        border: 1px solid #ccc;
+        text-align: center;
+        min-width: 60px;
+      }
+    </style>
 </head>
 
 <body>
 
-	<nav class="navbar navbar-inverse navbar-fixed-top">
-		<div class="container">
-			<div class="navbar-header">
-				<button type="button" class="navbar-toggle collapsed"
-					data-toggle="collapse" data-target="#navbar" aria-expanded="false"
-					aria-controls="navbar">
-					<span class="sr-only">Toggle navigation</span> <span
-						class="icon-bar"></span> <span class="icon-bar"></span> <span
-						class="icon-bar"></span>
-				</button>
-				<a class="navbar-brand" href="/index.html">Dimitri Tishchenko</a>
-			</div>
-			<div id="navbar" class="collapse navbar-collapse">
-				<ul class="nav navbar-nav">
-					<li><a href="/index.html">Home</a></li>
-					<li><a href="/projects/index.html">Projects</a></li>
-					<li class="active"><a href="/blog/index.html">Blog</a></li>
-					<li><a href="/photography/index.html">Photography</a></li>
-					<li><a href="/contact/index.html">Contact</a></li>
-				</ul>
-			</div>
-			<!--/.nav-collapse -->
-		</div>
-	</nav>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="/"><img src="/favicon.svg" alt="">Dimitri Tishchenko</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="/projects/">Projects</a>
+        <a href="/blog/" aria-current="true">Blog</a>
+        <a href="/photography/">Photography</a>
+        <a href="/contact/">Contact</a>
+      </nav>
+    </div>
+  </header>
 
-	<div class="container">
+	<main class="page page--prose prose">
     <h1>The Value Of a Blackjack Strategy</h1>
 
     <p>
@@ -317,7 +298,6 @@
     </p>
     <table id="table_state_best_action"></table>
 
-
     <h2>
       Optimal State Action Values
     </h2>
@@ -358,18 +338,22 @@
       look at strategies that can be used instead that balance exploration
       and exploitation.
     </p>
-	</div>
-	<!-- /.container -->
+	</main>
 
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <span>© Dimitri Tishchenko</span>
+      <ul>
+        <li><a href="https://github.com/koozdra">GitHub</a></li>
+        <li><a href="https://twitter.com/koozdra">Twitter</a></li>
+        <li><a href="https://www.youtube.com/user/koozdra">YouTube</a></li>
+        <li><a href="https://www.flickr.com/photos/38565795@N05/">Flickr</a></li>
+        <li><a href="https://www.printables.com/@DimitriTishc_1975665">Printables</a></li>
+      </ul>
+    </div>
+  </footer>
 
-	<!-- Bootstrap core JavaScript
-    ================================================== -->
 	<!-- Placed at the end of the document so the pages load faster -->
-	<script
-		src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-	<script src="/bootstrap/js/bootstrap.min.js"></script>
-
-
 
 </body>
 </html>
