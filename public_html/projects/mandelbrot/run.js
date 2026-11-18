@@ -27,14 +27,25 @@ const CONFIG = {
   // view the old version showed on a 2x (retina) display, so existing
   // bookmarks look the same there - and now look the same on every display.
   baseViewWidth: 11.2,
-  zoomInFactor: 0.3,
-  zoomOutFactor: 1.7,
+  // Default click / button zoom: 0.3 of the width per step, as before.
+  zoomStep: 1 / 0.3,
+  // Don't zoom out past a view this many times the default width.
+  maxZoom: 4,
+  // Scroll-wheel zoom: factor e^(k * deltaY pixels). Trackpad pinches
+  // arrive as ctrl+wheel with much smaller deltas, so they get a larger k.
+  wheelZoomRate: 0.0018,
+  pinchWheelZoomRate: 0.012,
+  // Wait this long after the last wheel/key step before rendering, so a
+  // burst of steps renders once (the scaled preview shows in between).
+  settleMs: 220,
   // Switch to perturbation below this pixel size (complex units per device
   // pixel). Above it, float64 coordinates are accurate enough.
   deepZoomPixelSize: 1e-12,
   // float64 pixel offsets underflow near 1e-308; stop zooming well before.
   minPixelSize: 1e-290,
   frameBudgetMs: 60,
+  // Total memory for the workers' copies of the reference orbit.
+  referenceMemoryBudget: 1e9,
   // Pixels iterated together per kernel loop (see "Escape-time kernels").
   lanes: 4,
 };
@@ -410,27 +421,147 @@ function setCenterBits(state, bits) {
   c.bits = bits;
 }
 
+// Limits a zoom factor so the view stays between CONFIG.maxZoom and the
+// smallest pixel float64 deltas can handle. A view already past a limit is
+// not pushed further, but can move back.
+function clampZoomFactor(state, factor) {
+  const minZoom = (CONFIG.minPixelSize * state.width) / CONFIG.baseViewWidth;
+  const lo = Math.min(state.zoom, minZoom);
+  const hi = Math.max(state.zoom, CONFIG.maxZoom);
+  const zoom = Math.min(hi, Math.max(lo, state.zoom * factor));
+  return zoom / state.zoom;
+}
+
 // Moves the centre to a device-pixel position, then applies the zoom factor.
 function recenter(state, px, py, zoomFactor) {
   const ps = pixelSize(state);
-  let newZoom = state.zoom * zoomFactor;
-  if (pixelSize({ zoom: newZoom, width: state.width }) < CONFIG.minPixelSize) {
-    newZoom = state.zoom; // float64 deltas would underflow; stop zooming
-  }
+  const factor = clampZoomFactor(state, zoomFactor);
 
-  setCenterBits(state, Fixed.bitsFor(Math.min(ps, ps * zoomFactor)));
+  setCenterBits(state, Fixed.bitsFor(Math.min(ps, ps * factor)));
   const c = state.center;
   c.x += Fixed.fromDouble((px - state.width / 2) * ps, c.bits);
   c.y += Fixed.fromDouble((state.height / 2 - py) * ps, c.bits);
-  state.zoom = newZoom;
+  state.zoom *= factor;
 }
 
+// Zooms by `factor` keeping the point under device pixel (px, py) still.
+function zoomAt(state, px, py, zoomFactor) {
+  const factor = clampZoomFactor(state, zoomFactor);
+  if (factor === 1) return;
+  const ps = pixelSize(state);
+  setCenterBits(state, Fixed.bitsFor(Math.min(ps, ps * factor)));
+  const c = state.center;
+  const shift = ps * (1 - factor);
+  c.x += Fixed.fromDouble((px - state.width / 2) * shift, c.bits);
+  c.y += Fixed.fromDouble((state.height / 2 - py) * shift, c.bits);
+  state.zoom *= factor;
+}
+
+// Moves the image by (dx, dy) device pixels, as when dragging it.
+function panBy(state, dx, dy) {
+  const ps = pixelSize(state);
+  setCenterBits(state, Fixed.bitsFor(ps));
+  const c = state.center;
+  c.x -= Fixed.fromDouble(dx * ps, c.bits);
+  c.y += Fixed.fromDouble(dy * ps, c.bits);
+}
+
+// Fits the device-pixel rectangle (x0, y0)-(x1, y1) to the canvas.
+function zoomToBox(state, x0, y0, x1, y1) {
+  const w = Math.abs(x1 - x0),
+    h = Math.abs(y1 - y0);
+  const factor = Math.max(w / state.width, h / state.height);
+  recenter(state, (x0 + x1) / 2, (y0 + y1) / 2, factor);
+}
+
+function currentView(state) {
+  const c = state.center;
+  return {
+    x: c.x,
+    y: c.y,
+    bits: c.bits,
+    zoom: state.zoom,
+    ps: pixelSize(state),
+    width: state.width,
+    height: state.height,
+  };
+}
+
+function setView(state, view) {
+  state.center = { x: view.x, y: view.y, bits: view.bits };
+  state.zoom = view.zoom;
+}
+
+// Preview ---------------------------------------------
+// While the view moves, the last image is scaled and shifted to match it,
+// so zooming and panning respond instantly. A render then starts from that
+// preview and sharpens it, instead of starting from an empty canvas.
+//
+// `state.shown` is the view the canvas currently depicts. A gesture copies
+// the canvas into `state.snapshot` once, with that view as `state.base`;
+// every step redraws the snapshot for the current view.
+function beginPreview(state) {
+  if (state.base) return;
+  state.job = null; // stop the running render from drawing over the preview
+  if (!state.shown) return;
+  const snap = state.snapshot || (state.snapshot = document.createElement("canvas"));
+  snap.width = state.width;
+  snap.height = state.height;
+  snap.getContext("2d").drawImage(state.canvas, 0, 0);
+  state.base = state.shown;
+}
+
+function drawPreview(state) {
+  const ctx = state.ctx,
+    base = state.base;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, state.width, state.height);
+  if (!base) return;
+
+  // Old pixel o maps to new pixel k * o + t: k is the change in scale, the
+  // centre offset is measured in old pixels (y grows downwards on screen).
+  const c = state.center;
+  const bits = Math.max(c.bits, base.bits);
+  const diff = (a, aBits, b, bBits) =>
+    Fixed.toDouble(Fixed.rescale(a, aBits, bits) - Fixed.rescale(b, bBits, bits), bits);
+  const k = base.ps / pixelSize(state);
+  const dx = diff(c.x, c.bits, base.x, base.bits) / base.ps;
+  const dy = -diff(c.y, c.bits, base.y, base.bits) / base.ps;
+  if (![k, dx, dy].every(Number.isFinite)) return;
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.setTransform(
+    k, 0, 0, k,
+    state.width / 2 - (base.width / 2 + dx) * k,
+    state.height / 2 - (base.height / 2 + dy) * k
+  );
+  ctx.drawImage(state.snapshot, 0, 0);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+// Shortest query that reproduces the view, e.g. x=-0.4141588&y=0.2702925&z=0.01082
+//  * coordinates get two decimal places more than the pixel size needs
+//    (within 1/100 of a pixel, so a larger screen still lands on the spot);
+//  * small coordinates use scientific notation instead of leading zeros;
+//  * the zoom keeps 4 significant figures (a 0.01% change in scale).
+// Old links with long decimals and `zoom=` still load (see applyUrlLocation).
 function locationQuery(state) {
   const c = state.center;
-  const places = Math.max(17, Math.ceil(-Math.log10(pixelSize(state))) + 3);
-  const x = Fixed.toDecimal(c.x, c.bits, places);
-  const y = Fixed.toDecimal(c.y, c.bits, places);
-  return `x=${x}&y=${y}&zoom=${state.zoom}`;
+  const places = Math.max(1, Math.ceil(-Math.log10(pixelSize(state))) + 2);
+  const x = compactDecimal(Fixed.toDecimal(c.x, c.bits, places));
+  const y = compactDecimal(Fixed.toDecimal(c.y, c.bits, places));
+  const z = Number(state.zoom.toPrecision(4));
+  const iter = state.maxIterations === DEFAULT_ITERATIONS ? "" : `&iter=${state.maxIterations}`;
+  return `x=${x}&y=${y}&z=${z}${iter}`;
+}
+
+// "-0.0000395134" -> "-3.95134e-5" when that is shorter (3+ leading zeros).
+function compactDecimal(text) {
+  const m = /^(-?)0\.(0{3,})(\d+)$/.exec(text);
+  if (!m) return text;
+  const [, sign, zeros, digits] = m;
+  const mantissa = digits.length > 1 ? `${digits[0]}.${digits.slice(1)}` : digits;
+  return `${sign}${mantissa}e-${zeros.length + 1}`;
 }
 
 // Canvas setup ---------------------------------------------
@@ -462,13 +593,21 @@ function initialState(canvas) {
     dpr: window.devicePixelRatio || 1,
     center: { x: 0n, y: 0n, bits: 64 },
     zoom: 1,
-    maxIterations: 2500,
+    maxIterations: DEFAULT_ITERATIONS,
     coloring: {
       steps: 23,
       colors: [Colors.black, Colors.white],
       interior: Colors.black,
     },
     clickMode: "zoomIn",
+    zoomStep: CONFIG.zoomStep,
+    sizeMode: "fit",
+    history: [], // earlier views, for "back"
+    moving: false, // the view changed since the last render started
+    renderTimer: 0,
+    shown: null, // view the canvas depicts; see "Preview"
+    base: null,
+    snapshot: null,
     job: null,
     jobCount: 0,
     reference: null,
@@ -483,7 +622,10 @@ function initialState(canvas) {
 
 function applyUrlLocation(state) {
   const params = new URLSearchParams(window.location.search);
-  const zoom = parseFloat(params.get("zoom"));
+  const iter = parseInt(params.get("iter"), 10);
+  if (iter >= 1 && iter <= MAX_ITERATIONS) state.maxIterations = iter;
+
+  const zoom = parseFloat(params.get("z") ?? params.get("zoom"));
   if (!(zoom > 0 && Number.isFinite(zoom))) return;
 
   const bits = Fixed.bitsFor(pixelSize({ zoom, width: state.width }));
@@ -614,6 +756,14 @@ function dispatch(state, worker) {
     return;
   }
   if (worker.setupId !== job.id) {
+    if (job.workersUsed >= job.maxWorkers) {
+      // Not needed for this job: drop any old reference orbit it holds.
+      if (worker.setupId !== -1) worker.postMessage({ type: "setup", id: -1, setup: null });
+      worker.setupId = -1;
+      worker.busy = false;
+      return;
+    }
+    job.workersUsed++;
     worker.postMessage({ type: "setup", id: job.id, setup: job.setup });
     worker.setupId = job.id;
   }
@@ -675,7 +825,14 @@ function pixelsToCompute(state, maxIter) {
     state.ranksKey = key;
     state.ranksMaxIter = maxIter;
     ranks.fill(UNKNOWN_RANK);
-    clear(state);
+    if (state.base) {
+      // Start from the scaled previous image; every pixel is recomputed.
+      drawPreview(state);
+      state.image = state.ctx.getImageData(0, 0, state.width, state.height);
+      state.pixels = new Uint32Array(state.image.data.buffer);
+    } else {
+      clear(state);
+    }
     return order;
   }
 
@@ -706,11 +863,15 @@ function pixelsToCompute(state, maxIter) {
 
 // Rendering ---------------------------------------------
 function render(state) {
+  clearTimeout(state.renderTimer);
   const ps = pixelSize(state);
   const deep = ps < CONFIG.deepZoomPixelSize;
   const maxIter = state.maxIterations;
   const order = pixelsToCompute(state, maxIter);
   const reused = state.width * state.height - order.length;
+  state.base = null;
+  state.shown = currentView(state);
+  state.moving = false;
 
   const setup = {
     deep,
@@ -743,6 +904,8 @@ function render(state) {
     next: 0, // pixels handed out
     done: 0, // pixels painted
     chunkSize: 1024,
+    maxWorkers: Infinity, // lowered for long reference orbits
+    workersUsed: 0,
     detect: deep, // deep interior detection; may switch off, see noteDetection
     probed: 0,
     detected: 0,
@@ -756,8 +919,10 @@ function render(state) {
   };
 
   state.job = job; // older jobs stop: their frames and results are ignored
-  showLocation(state);
+  showView(state);
+  saveLocationInUrl(state);
   showStatus(deep ? "starting deep render…" : "rendering…");
+  showProgress(job.total > 0 ? 0 : 1);
   requestAnimationFrame(() => renderFrame(state, job));
 }
 
@@ -772,15 +937,20 @@ function renderFrame(state, job) {
       if (!referenceReady(ref, job.setup.maxIter)) {
         const pct = Math.floor((100 * ref.length) / (job.setup.maxIter + 1));
         showStatus(`computing reference orbit… ${pct}%`);
+        showProgress(0);
         requestAnimationFrame(() => renderFrame(state, job));
         return;
       }
     }
     if (ref) {
       const length = Math.min(ref.length, job.setup.maxIter + 1);
-      job.setup.refX = ref.x.slice(0, length);
-      job.setup.refY = ref.y.slice(0, length);
+      // A full orbit is no longer written to, so it can be sent as is.
+      job.setup.refX = length === ref.x.length ? ref.x : ref.x.slice(0, length);
+      job.setup.refY = length === ref.y.length ? ref.y : ref.y.slice(0, length);
       job.setup.refLength = length;
+      // Every worker gets its own copy of the orbit (16 bytes an iteration,
+      // 160 MB at 10 million). Use fewer workers rather than run out of memory.
+      job.maxWorkers = Math.max(1, Math.floor(CONFIG.referenceMemoryBudget / (16 * length)));
     }
     job.ready = true;
     if (state.workers) {
@@ -803,8 +973,10 @@ function renderFrame(state, job) {
   if (finished) {
     const seconds = ((performance.now() - job.startedAt) / 1000).toFixed(2);
     showStatus(`${describeJob(state, job)} · done in ${seconds}s`);
+    showProgress(1);
   } else {
     showStatus(`${describeJob(state, job)} · ${Math.floor((100 * job.done) / job.total)}%`);
+    showProgress(job.done / job.total);
     requestAnimationFrame(() => renderFrame(state, job));
   }
 }
@@ -844,7 +1016,13 @@ function paint(state, job, indices, ranks) {
 function describeJob(state, job) {
   const parts = [job.setup.deep ? `perturbation, ${Fixed.bitsFor(job.setup.ps)}-bit reference` : "float64"];
   if (job.setup.deep && job.detect && job.total > 0) parts.push("interior detection");
-  parts.push(state.workers ? `${state.workers.length} workers` : "main thread");
+  parts.push(
+    state.workers
+      ? job.maxWorkers < state.workers.length
+        ? `${job.maxWorkers} of ${state.workers.length} workers (memory)`
+        : `${state.workers.length} workers`
+      : "main thread"
+  );
   if (job.reused > 0) {
     parts.push(`reused ${Math.round((100 * job.reused) / (job.reused + job.total))}%`);
   }
@@ -857,6 +1035,26 @@ function clear(state) {
 }
 
 // UI ---------------------------------------------
+const $ = (selector) => document.querySelector(selector);
+
+const SUPERSCRIPT = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+
+// 1 / zoom, e.g. "1×", "3.3×", "1,230×", "3.21 × 10⁹".
+function formatMagnification(m) {
+  if (m < 1e5) return `${Number(m.toPrecision(m < 10 ? 2 : 3)).toLocaleString("en-US")}×`;
+  const [mantissa, exp] = m.toExponential(2).split("e");
+  const power = String(Number(exp)).replace(/\d/g, (d) => SUPERSCRIPT[d]);
+  return `${mantissa} × 10${power}`;
+}
+
+function showView(state) {
+  showLocation(state);
+  const mag = $("#magnification");
+  if (mag) mag.textContent = formatMagnification(1 / state.zoom);
+  const back = $("#backButton");
+  if (back) back.disabled = state.history.length === 0;
+}
+
 function showLocation(state) {
   const el = document.querySelector("span.currentLocation");
   if (!el) return;
@@ -867,63 +1065,375 @@ function showLocation(state) {
   el.replaceChildren(link);
 }
 
+// Keeps the address bar on the current view, so reloading or sharing the
+// page comes back here. Browsers rate-limit replaceState, so this runs once
+// per render rather than on every gesture step.
+function saveLocationInUrl(state) {
+  const isDefault = state.zoom === 1 && state.center.x === 0n && state.center.y === 0n;
+  const query = isDefault && state.maxIterations === DEFAULT_ITERATIONS ? "" : "?" + locationQuery(state);
+  try {
+    history.replaceState(null, "", window.location.pathname + query);
+  } catch (err) {
+    // ignore: the link under "Location" still has it
+  }
+}
+
 function showStatus(text) {
   const el = document.querySelector("span.renderStatus");
   if (el) el.textContent = text;
 }
 
-function onCanvasClick(e) {
-  // offsetX/Y are CSS pixels inside the border; convert to device pixels.
-  const scale = state.width / state.canvas.clientWidth;
-  const px = e.offsetX * scale,
-    py = e.offsetY * scale;
-
-  const factor =
-    state.clickMode === "zoomIn"
-      ? CONFIG.zoomInFactor
-      : state.clickMode === "zoomOut"
-        ? CONFIG.zoomOutFactor
-        : 1;
-
-  recenter(state, px, py, factor);
-  render(state);
+function showProgress(fraction) {
+  const bar = $("#renderProgress");
+  if (!bar) return;
+  bar.style.transform = `scaleX(${fraction})`;
+  bar.parentElement.classList.toggle("is-done", fraction >= 1);
 }
 
+// Navigation ---------------------------------------------
+// Every view change goes through `navigate`: the preview updates at once,
+// and the render starts after `delay` ms (0: now; null: not yet, the gesture
+// renders when it ends). The view before a run of changes is kept for "back".
+function navigate(state, change, delay = 0, remember = true) {
+  if (!state.moving && remember) {
+    state.history.push(currentView(state));
+    if (state.history.length > 200) state.history.shift();
+  }
+  state.moving = true;
+  beginPreview(state);
+  change();
+  drawPreview(state);
+  showView(state);
+
+  clearTimeout(state.renderTimer);
+  if (delay === 0) {
+    render(state);
+    return;
+  }
+  showStatus("preview · renders when you stop moving");
+  showProgress(0);
+  if (delay !== null) state.renderTimer = setTimeout(() => render(state), delay);
+}
+
+function zoomCenter(state, factor) {
+  navigate(state, () => zoomAt(state, state.width / 2, state.height / 2, factor), CONFIG.settleMs);
+}
+
+function goBack(state) {
+  const view = state.history.pop();
+  if (view) navigate(state, () => setView(state, view), 0, false);
+}
+
+function resetView(state) {
+  navigate(state, () => setView(state, { x: 0n, y: 0n, bits: 64, zoom: 1 }));
+}
+
+// What a plain click does, depending on the click mode.
+function clickAt(state, px, py) {
+  const factor =
+    state.clickMode === "zoomIn"
+      ? 1 / state.zoomStep
+      : state.clickMode === "zoomOut"
+        ? state.zoomStep
+        : 1;
+  navigate(state, () => recenter(state, px, py, factor));
+}
+
+// Pointer position in device pixels (x, y) and CSS pixels (cssX, cssY).
+function canvasPoint(state, e) {
+  const rect = state.canvas.getBoundingClientRect();
+  const scale = state.width / rect.width;
+  const cssX = e.clientX - rect.left,
+    cssY = e.clientY - rect.top;
+  return { x: cssX * scale, y: cssY * scale, cssX, cssY };
+}
+
+// Mouse, pen and touch: click/tap uses the click mode, drag pans, shift-drag
+// frames a box to zoom into, two fingers pan and pinch, the wheel (or a
+// trackpad pinch) zooms around the pointer.
+function attachPointerControls(state) {
+  const canvas = state.canvas;
+  const stage = $(".mb-stage");
+  const box = $("#zoomBox");
+  const pointers = new Map();
+  let gesture = null; // press | pan | box | pinch | cancelled
+
+  const pinchInfo = () => {
+    const [a, b] = [...pointers.values()];
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, dist: Math.hypot(a.x - b.x, a.y - b.y) };
+  };
+  const showBox = (a, b) => {
+    box.style.left = Math.min(a.cssX, b.cssX) + "px";
+    box.style.top = Math.min(a.cssY, b.cssY) + "px";
+    box.style.width = Math.abs(a.cssX - b.cssX) + "px";
+    box.style.height = Math.abs(a.cssY - b.cssY) + "px";
+    box.hidden = false;
+  };
+  const hideBox = () => {
+    box.hidden = true;
+  };
+
+  canvas.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault(); // no text selection or native drag
+    canvas.setPointerCapture(e.pointerId);
+    stage.focus({ preventScroll: true });
+    const p = canvasPoint(state, e);
+    pointers.set(e.pointerId, p);
+    if (pointers.size === 1) {
+      gesture = { type: "press", start: p, last: p, box: e.shiftKey };
+    } else if (pointers.size === 2) {
+      hideBox();
+      stage.classList.remove("is-boxing");
+      gesture = { type: "pinch", last: pinchInfo() };
+    }
+  });
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (!pointers.has(e.pointerId) || !gesture) return;
+    const p = canvasPoint(state, e);
+    pointers.set(e.pointerId, p);
+
+    if (gesture.type === "pinch") {
+      if (pointers.size < 2) return;
+      const now = pinchInfo(),
+        last = gesture.last;
+      gesture.last = now;
+      navigate(state, () => {
+        panBy(state, now.x - last.x, now.y - last.y);
+        if (now.dist > 0 && last.dist > 0) zoomAt(state, now.x, now.y, last.dist / now.dist);
+      }, null);
+      return;
+    }
+    if (gesture.type === "press") {
+      const moved = Math.hypot(p.cssX - gesture.start.cssX, p.cssY - gesture.start.cssY);
+      if (moved < 4) return;
+      gesture.type = gesture.box ? "box" : "pan";
+      stage.classList.add(gesture.type === "pan" ? "is-panning" : "is-boxing");
+    }
+    if (gesture.type === "pan") {
+      const last = gesture.last;
+      gesture.last = p;
+      navigate(state, () => panBy(state, p.x - last.x, p.y - last.y), null);
+    } else if (gesture.type === "box") {
+      gesture.last = p;
+      showBox(gesture.start, p);
+    }
+  });
+
+  const end = (e) => {
+    if (!pointers.delete(e.pointerId) || pointers.size > 0 || !gesture) return;
+    const g = gesture;
+    gesture = null;
+    stage.classList.remove("is-panning", "is-boxing");
+    hideBox();
+    const cancelled = e.type === "pointercancel";
+
+    if (g.type === "press" && !cancelled) {
+      clickAt(state, g.start.x, g.start.y);
+    } else if (g.type === "box" && !cancelled) {
+      const w = Math.abs(g.last.cssX - g.start.cssX),
+        h = Math.abs(g.last.cssY - g.start.cssY);
+      if (w >= 8 && h >= 8) {
+        navigate(state, () => zoomToBox(state, g.start.x, g.start.y, g.last.x, g.last.y));
+      }
+    } else if (state.moving) {
+      render(state); // end of a pan or pinch
+    }
+  };
+  canvas.addEventListener("pointerup", end);
+  canvas.addEventListener("pointercancel", end);
+
+  // Escape drops a box being drawn.
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && gesture && gesture.type === "box") {
+      gesture.type = "cancelled";
+      stage.classList.remove("is-boxing");
+      hideBox();
+    }
+  });
+
+  canvas.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault();
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? canvas.clientHeight : 1;
+      const rate = e.ctrlKey ? CONFIG.pinchWheelZoomRate : CONFIG.wheelZoomRate;
+      const factor = Math.min(2, Math.max(0.5, Math.exp(e.deltaY * unit * rate)));
+      const p = canvasPoint(state, e);
+      navigate(state, () => zoomAt(state, p.x, p.y, factor), CONFIG.settleMs);
+    },
+    { passive: false }
+  );
+
+  // Safari reports trackpad pinches as gesture events, not ctrl+wheel. On
+  // touch screens the pointer events above already handle pinching.
+  let gestureScale = 1;
+  canvas.addEventListener("gesturestart", (e) => {
+    e.preventDefault();
+    gestureScale = 1;
+  });
+  canvas.addEventListener("gesturechange", (e) => {
+    e.preventDefault();
+    if (pointers.size >= 2) return;
+    const factor = gestureScale / e.scale;
+    gestureScale = e.scale;
+    const p = canvasPoint(state, e);
+    navigate(state, () => zoomAt(state, p.x, p.y, factor), CONFIG.settleMs);
+  });
+}
+
+// + − zoom on the centre, 0 resets, Backspace goes back, arrows pan (unless
+// another control, such as a link or the slider, has focus).
+function attachKeyboardControls(state) {
+  const stage = $(".mb-stage");
+  document.addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+    if (e.target.closest && e.target.closest("input, select, textarea, [contenteditable]")) return;
+    const step = state.width * (e.shiftKey ? 0.4 : 0.12);
+
+    switch (e.key) {
+      case "+":
+      case "=":
+        zoomCenter(state, 1 / state.zoomStep);
+        break;
+      case "-":
+      case "_":
+        zoomCenter(state, state.zoomStep);
+        break;
+      case "0":
+        resetView(state);
+        break;
+      case "Backspace":
+        goBack(state);
+        break;
+      case "ArrowLeft":
+      case "ArrowRight":
+      case "ArrowUp":
+      case "ArrowDown": {
+        if (!stage.contains(e.target) && e.target !== document.body) return;
+        const dx = e.key === "ArrowLeft" ? step : e.key === "ArrowRight" ? -step : 0;
+        const dy = e.key === "ArrowUp" ? step : e.key === "ArrowDown" ? -step : 0;
+        navigate(state, () => panBy(state, dx, dy), CONFIG.settleMs);
+        break;
+      }
+      default:
+        return;
+    }
+    e.preventDefault();
+  });
+}
+
+// On-screen pan pad. A press moves the view a fifth of its width; holding
+// repeats, like a held key. The render waits until the arrows are released.
+function attachPanPad(state) {
+  const PAN_STEP = 0.2,
+    REPEAT_DELAY = 400,
+    REPEAT_EVERY = 160;
+
+  document.querySelectorAll("[data-pan]").forEach((button) => {
+    // Direction the view moves: the image itself moves the other way.
+    const [ux, uy] = button.dataset.pan.split(",").map(Number);
+    const step = (delay) => {
+      const d = state.width * PAN_STEP;
+      navigate(state, () => panBy(state, -ux * d, -uy * d), delay);
+    };
+    let timer = 0;
+
+    const stop = () => {
+      if (!timer) return;
+      clearTimeout(timer);
+      timer = 0;
+      if (state.moving) render(state);
+    };
+    const repeat = () => {
+      step(null);
+      timer = setTimeout(repeat, REPEAT_EVERY);
+    };
+
+    button.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      e.preventDefault();
+      button.setPointerCapture(e.pointerId);
+      step(null);
+      timer = setTimeout(repeat, REPEAT_DELAY);
+    });
+    button.addEventListener("pointerup", stop);
+    button.addEventListener("pointercancel", stop);
+    button.addEventListener("lostpointercapture", stop);
+    // Enter / Space on a focused arrow (pointer presses are handled above).
+    button.addEventListener("click", (e) => {
+      if (e.detail === 0) step(CONFIG.settleMs);
+    });
+  });
+}
+
+// Controls ---------------------------------------------
 function clickModeZoomIn() {
-  state.clickMode = "zoomIn";
+  setClickMode("zoomIn");
 }
 
 function clickModeZoomOut() {
-  state.clickMode = "zoomOut";
+  setClickMode("zoomOut");
 }
 
 function clickModeCenter() {
-  state.clickMode = "center";
+  setClickMode("center");
+}
+
+function setClickMode(mode) {
+  state.clickMode = mode;
+  const stage = $(".mb-stage");
+  if (stage) stage.dataset.mode = mode;
 }
 
 function resize(state, width, height) {
+  beginPreview(state); // the old image, rescaled, shows while it renders
   setCanvasSize(state, width, height);
   render(state);
 }
 
+// Sizes in CSS pixels; the canvas has devicePixelRatio times as many.
+const SIZES = {
+  xs: [140, 90],
+  s: [280, 180],
+  m: [560, 360],
+  l: [1120, 720],
+  full: [2880, 1800],
+};
+
+// "Fit": as wide as the page allows, and not taller than the window.
+function fitSize() {
+  const viewport = $(".mb-viewport");
+  const width = Math.max(200, Math.floor(viewport ? viewport.clientWidth : 280));
+  const height = Math.round(Math.min(width * 0.75, Math.max(280, window.innerHeight * 0.7)));
+  return [width, height];
+}
+
+function setSizeMode(mode) {
+  state.sizeMode = mode;
+  const [width, height] = mode === "fit" ? fitSize() : SIZES[mode];
+  resize(state, width, height);
+}
+
 function sizeXSmall() {
-  resize(state, 140, 90);
+  setSizeMode("xs");
 }
 
 function sizeSmall() {
-  resize(state, 280, 180);
+  setSizeMode("s");
 }
 
 function sizeMedium() {
-  resize(state, 560, 360);
+  setSizeMode("m");
 }
 
 function sizeLarge() {
-  resize(state, 1120, 720);
+  setSizeMode("l");
 }
 
 function sizeFull() {
-  resize(state, 2880, 1800);
+  setSizeMode("full");
 }
 
 function sizeCustom(x, y) {
@@ -931,22 +1441,70 @@ function sizeCustom(x, y) {
 }
 
 function generateImage() {
-  const img = new Image();
   const output = document.querySelector("div.imageOutput");
+  const magnification = formatMagnification(1 / state.zoom);
+  const src = state.canvas.toDataURL();
 
-  img.onload = function () {
-    img.width = img.naturalWidth / state.dpr;
+  const img = new Image();
+  img.src = src;
+  // Shown at the page width (CSS); the PNG keeps its full resolution.
+  img.alt = `Mandelbrot set at ${magnification} magnification`;
+
+  const link = document.createElement("a");
+  link.href = src;
+  link.download = imageFileName(state);
+  link.textContent = "Download PNG";
+
+  const caption = document.createElement("figcaption");
+  caption.append(`${state.width} × ${state.height} px · ${magnification} · `, link);
+
+  const figure = document.createElement("figure");
+  figure.className = "mb-shot";
+  figure.append(img, caption);
+  output.appendChild(figure);
+  output.hidden = false;
+  figure.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+// e.g. mandelbrot_x=-1.7499977518652907_y=3.9513418543621205e-8_z=8.084e-22_2432x1260.png
+// The location link's values, so the view can be found again, plus the
+// image size in pixels. Past about 10^80 magnification the coordinates are
+// cut short to keep the name within filesystem limits (255 characters).
+function imageFileName(state) {
+  const params = new URLSearchParams(locationQuery(state));
+  const shorten = (value, max) => {
+    if (value.length <= max) return value;
+    const exp = /e-?\d+$/.exec(value);
+    return value.slice(0, max - (exp ? exp[0].length : 0)) + (exp ? exp[0] : "");
   };
-  img.src = state.canvas.toDataURL();
+  const parts = [
+    `x=${shorten(params.get("x"), 90)}`,
+    `y=${shorten(params.get("y"), 90)}`,
+    `z=${params.get("z")}`,
+    `${state.width}x${state.height}`,
+  ];
+  return `mandelbrot_${parts.join("_")}.png`;
+}
 
-  output.appendChild(document.createElement("br"));
-  output.appendChild(img);
+function copyLocation(state, button) {
+  const url = window.location.origin + window.location.pathname + "?" + locationQuery(state);
+  const label = button.textContent;
+  const done = (text) => {
+    button.textContent = text;
+    setTimeout(() => (button.textContent = label), 1400);
+  };
+  if (!navigator.clipboard) return done("Not available");
+  navigator.clipboard.writeText(url).then(
+    () => done("Copied"),
+    () => done("Copy failed")
+  );
 }
 
 // The slider is logarithmic: its value is log10 of the iteration limit, so it
-// covers 1,000 to 2,000,000 with useful resolution at both ends. Each step is
+// covers 1,000 to 10,000,000 with useful resolution at both ends. Each step is
 // rounded to two significant figures (2,500 / 13,000 / 1,200,000).
-const MAX_ITERATIONS = 2000000;
+const MAX_ITERATIONS = 10000000;
+const DEFAULT_ITERATIONS = 2500;
 function sliderIterations(value) {
   const n = 10 ** parseFloat(value);
   const unit = 10 ** Math.max(0, Math.floor(Math.log10(n)) - 1);
@@ -964,6 +1522,43 @@ function iterations(e) {
   render(state);
 }
 
+function bindRadios(name, handler) {
+  document.querySelectorAll(`input[name="${name}"]`).forEach((input) => {
+    input.addEventListener("change", () => input.checked && handler(input.value));
+  });
+}
+
+function bindControls(state) {
+  bindRadios("clickMode", setClickMode);
+  bindRadios("zoomStep", (value) => (state.zoomStep = parseFloat(value)));
+  bindRadios("size", setSizeMode);
+
+  const slider = document.getElementById("rangeIterations");
+  slider.value = Math.log10(state.maxIterations);
+  showIterations({ target: slider });
+  slider.onchange = iterations;
+  slider.oninput = showIterations;
+
+  $("#zoomInButton").addEventListener("click", () => zoomCenter(state, 1 / state.zoomStep));
+  $("#zoomOutButton").addEventListener("click", () => zoomCenter(state, state.zoomStep));
+  $("#backButton").addEventListener("click", () => goBack(state));
+  $("#copyButton").addEventListener("click", (e) => copyLocation(state, e.currentTarget));
+  $("#generateButton").addEventListener("click", generateImage);
+
+  // Keep "Fit" fitted when the page width changes.
+  const viewport = $(".mb-viewport");
+  if (window.ResizeObserver && viewport) {
+    let timer = 0,
+      lastWidth = viewport.clientWidth;
+    new ResizeObserver(() => {
+      if (viewport.clientWidth === lastWidth) return;
+      lastWidth = viewport.clientWidth;
+      clearTimeout(timer);
+      timer = setTimeout(() => state.sizeMode === "fit" && setSizeMode("fit"), 150);
+    }).observe(viewport);
+  }
+}
+
 // Main entry ---------------------------------------------
 let state;
 
@@ -971,11 +1566,15 @@ function start() {
   const canvas = document.getElementById("board");
   state = initialState(canvas);
   state.workers = createWorkerPool(state);
+  const [width, height] = fitSize();
+  setCanvasSize(state, width, height);
   applyUrlLocation(state);
 
-  canvas.addEventListener("click", onCanvasClick);
-  document.getElementById("rangeIterations").onchange = iterations;
-  document.getElementById("rangeIterations").oninput = showIterations;
+  bindControls(state);
+  setClickMode(state.clickMode);
+  attachPointerControls(state);
+  attachKeyboardControls(state);
+  attachPanPad(state);
 
   render(state);
 }

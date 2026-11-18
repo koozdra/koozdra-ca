@@ -12,9 +12,463 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
   <link rel="stylesheet" href="/css/site.css">
   <script src="run.js" defer></script>
+  <style>
+    /* Mandelbrot explorer ------------------------------------------------ */
+
+    .mb-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 4px 24px;
+      margin-bottom: 18px;
+    }
+
+    .mb-header h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem);
+    }
+
+    .mb-header p {
+      margin: 0;
+      color: var(--text-muted);
+    }
+
+    /* Stage: the image with its overlays */
+
+    .mb-stage {
+      position: relative;
+      border-radius: var(--radius);
+      background: #0b0b10;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      outline: none;
+    }
+
+    .mb-stage:focus-visible {
+      box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+    }
+
+    /* Flex + auto margins centre a small canvas and still let a large one
+       scroll from its left edge. */
+    .mb-viewport {
+      display: flex;
+      min-height: 280px;
+      max-height: 85vh;
+      overflow: auto;
+      overscroll-behavior: contain;
+    }
+
+    .mb-canvas-wrap {
+      position: relative;
+      margin: auto;
+      line-height: 0;
+    }
+
+    .page--app .mb-stage canvas {
+      display: block;
+      border-radius: 0;
+      background: transparent;
+      touch-action: none;
+      cursor: zoom-in;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .mb-stage[data-mode="zoomOut"] canvas { cursor: zoom-out; }
+    .mb-stage[data-mode="center"] canvas { cursor: crosshair; }
+    .mb-stage.is-panning canvas { cursor: grabbing; }
+    .mb-stage.is-boxing canvas { cursor: crosshair; }
+
+    .mb-box {
+      position: absolute;
+      border: 1.5px solid #fff;
+      background: rgb(167 160 255 / 0.18);
+      box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+
+    .mb-hud {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      display: flex;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .mb-chip {
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgb(14 15 19 / 0.72);
+      color: #e9e9ee;
+      font-size: 0.8rem;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08);
+    }
+
+    .mb-tools {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .mb-tools__group {
+      display: flex;
+      flex-direction: column;
+      border-radius: 10px;
+      background: rgb(14 15 19 / 0.72);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08);
+      overflow: hidden;
+    }
+
+    .mb-tool {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #e9e9ee;
+      cursor: pointer;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .mb-tool + .mb-tool {
+      border-top: 1px solid rgb(255 255 255 / 0.08);
+    }
+
+    .mb-tool:hover:not(:disabled) {
+      background: rgb(255 255 255 / 0.12);
+      color: #fff;
+    }
+
+    .mb-tool:focus-visible {
+      outline: 2px solid #a7a0ff;
+      outline-offset: -2px;
+    }
+
+    .mb-tool:disabled {
+      color: rgb(233 233 238 / 0.35);
+      cursor: default;
+    }
+
+    .mb-tool svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Pan pad: four arrows around a circle, bottom right */
+    .mb-pad {
+      position: absolute;
+      right: 12px;
+      bottom: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 32px);
+      grid-template-rows: repeat(3, 32px);
+      border-radius: 50%;
+      background: rgb(14 15 19 / 0.72);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08);
+    }
+
+    .mb-pad .mb-tool {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      touch-action: none;
+    }
+
+    .mb-pad .mb-tool + .mb-tool {
+      border-top: 0;
+    }
+
+    .mb-pad .mb-tool:active {
+      background: rgb(255 255 255 / 0.2);
+    }
+
+    .mb-pad__up { grid-area: 1 / 2; }
+    .mb-pad__left { grid-area: 2 / 1; }
+    .mb-pad__right { grid-area: 2 / 3; }
+    .mb-pad__down { grid-area: 3 / 2; }
+
+    .mb-progress {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: rgb(255 255 255 / 0.08);
+      transition: opacity 0.4s 0.3s;
+      pointer-events: none;
+    }
+
+    .mb-progress.is-done {
+      opacity: 0;
+    }
+
+    .mb-progress__bar {
+      height: 100%;
+      background: #a7a0ff;
+      transform-origin: left;
+      transform: scaleX(0);
+    }
+
+    .mb-hint {
+      margin: 10px 2px 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    kbd {
+      display: inline-block;
+      min-width: 1.6em;
+      padding: 0 5px;
+      border: 1px solid var(--border);
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      background: var(--surface);
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    /* Control panels */
+
+    .mb-panels {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .mb-panel {
+      min-width: 0;
+      padding: 18px 20px 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .mb-panel h2 {
+      margin: 0 0 14px;
+      font-size: 1.05rem;
+    }
+
+    .mb-field + .mb-field {
+      margin-top: 16px;
+    }
+
+    .mb-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 6px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .mb-label output {
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Segmented control built from radio buttons */
+    .seg {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      max-width: 100%;
+      margin: 0;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-2);
+    }
+
+    .seg label {
+      position: relative;
+    }
+
+    .seg input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .seg span {
+      display: block;
+      padding: 4px 12px;
+      border-radius: 7px;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .seg label:hover span {
+      color: var(--text);
+    }
+
+    .seg input:checked + span {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 1px 2px rgb(20 20 30 / 0.12), 0 0 0 1px var(--border);
+    }
+
+    .seg input:focus-visible + span {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .mb-range {
+      display: block;
+      width: 100%;
+      margin: 4px 0 0;
+    }
+
+    .mb-scale {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .mb-location {
+      display: block;
+      max-height: 7.5em;
+      overflow: auto;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      line-height: 1.5;
+      word-break: break-all;
+    }
+
+    .mb-location a {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .mb-location a:hover {
+      color: var(--accent);
+    }
+
+    .mb-status {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mb-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .page--app .mb-panel .btn {
+      margin: 0;
+      padding: 6px 14px;
+      font-size: 0.875rem;
+    }
+
+    .mb-bookmarks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .mb-bookmarks a {
+      display: inline-block;
+      padding: 3px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text);
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+
+    .mb-bookmarks a:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .mb-muted {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* Generated images */
+
+    .imageOutput:not([hidden]) {
+      display: grid;
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .mb-shot {
+      margin: 0;
+    }
+
+    .mb-shot img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow);
+    }
+
+    .mb-shot figcaption {
+      margin-top: 8px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 600px) {
+      .mb-hint .mb-desktop { display: none; }
+    }
+  </style>
 </head>
 
-<body >
+<body>
 
   <header class="site-header">
     <div class="site-header__inner">
@@ -29,91 +483,137 @@
   </header>
 
 <main class="page page--wide page--app">
-  <div class="starter-template container-fluid">
+  <a class="back-link" href="/projects/">← Projects</a>
 
-    <a class="back-link" href="/projects/">← Projects</a>
-  </div>
-  <div class="text-center">
-    <canvas id="board" width="280" height="180" style="border: 1px solid"></canvas>
-  </div>
+  <header class="mb-header">
+    <h1>Mandelbrot Explorer</h1>
+    <p>Deep zoom with perturbation theory, rendered on every core.</p>
+  </header>
 
-  <div class="row">
-    <div class="col-md-2">
-      <strong>Click Mode:</strong>
-      <div>
-      <div class="radio">
-        <label><input type="radio" name="clickMode" onclick="clickModeZoomIn();" checked>Zoom In</label>
-        </div>
-        <div class="radio">
-        <label><input type="radio" name="clickMode" onclick="clickModeZoomOut();">Zoom Out</label>
-        </div>
-        <div class="radio">
-        <label><input type="radio" name="clickMode" onclick="clickModeCenter();">Center</label>
-        </div>
+  <div class="mb-stage" tabindex="0" data-mode="zoomIn" aria-label="Mandelbrot set viewer. Use plus and minus to zoom, arrow keys to pan.">
+    <div class="mb-viewport">
+      <div class="mb-canvas-wrap">
+        <canvas id="board" width="280" height="180" role="img" aria-label="Rendering of the Mandelbrot set"></canvas>
+        <div class="mb-box" id="zoomBox" hidden></div>
       </div>
     </div>
 
-    <div class="col-md-2">
-      <strong>Size:</strong>
-      <div class="radio">
-        <label><input type="radio" name="size" onclick="sizeXSmall();">Extra Small</label>
+    <div class="mb-hud" aria-live="polite">
+      <span class="mb-chip" id="magnification" title="Magnification">1×</span>
+    </div>
+
+    <div class="mb-tools">
+      <div class="mb-tools__group">
+        <button class="mb-tool" type="button" id="zoomInButton" title="Zoom in (+)" aria-label="Zoom in">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button class="mb-tool" type="button" id="zoomOutButton" title="Zoom out (−)" aria-label="Zoom out">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>
+        </button>
       </div>
-      <div class="radio">
-        <label><input type="radio" name="size" onclick="sizeSmall();" checked>Small</label>
-      </div>
-      <div class="radio">
-        <label><input type="radio" name="size" onclick="sizeMedium();">Medium</label>
-      </div>
-      <div class="radio">
-        <label><input type="radio" name="size" onclick="sizeLarge();">Large</label>
-      </div>
-      <div class="radio">
-        <label><input type="radio" name="size" onclick="sizeFull();">Full</label>
+      <div class="mb-tools__group">
+        <button class="mb-tool" type="button" id="backButton" title="Back to the previous view (Backspace)" aria-label="Back" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        </button>
       </div>
     </div>
-  </div>
 
-  <div class="row">
-    <div class="col-md-6">
-      <div class="range full-width">
-        <label style="width:100%"><input value="3.398" type="range" min="3" max="6.301" step="0.001" id="rangeIterations" aria-describedby="iterationsValue">Max iterations: <output id="iterationsValue">2,500</output></label>
-      </div>
+    <div class="mb-pad" role="group" aria-label="Pan">
+      <button class="mb-tool mb-pad__up" type="button" data-pan="0,-1" title="Pan up (↑) · hold to keep moving" aria-label="Pan up">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+      </button>
+      <button class="mb-tool mb-pad__left" type="button" data-pan="-1,0" title="Pan left (←) · hold to keep moving" aria-label="Pan left">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
+      </button>
+      <button class="mb-tool mb-pad__right" type="button" data-pan="1,0" title="Pan right (→) · hold to keep moving" aria-label="Pan right">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      </button>
+      <button class="mb-tool mb-pad__down" type="button" data-pan="0,1" title="Pan down (↓) · hold to keep moving" aria-label="Pan down">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
     </div>
+
+    <div class="mb-progress is-done" aria-hidden="true"><div class="mb-progress__bar" id="renderProgress"></div></div>
   </div>
 
-  <div>
-    <strong>Location:</strong>
-    <span class="currentLocation"></span>
+  <p class="mb-hint">
+    Click to zoom · scroll or pinch to zoom smoothly · drag the image or use the arrows to pan<span class="mb-desktop"> · <kbd>Shift</kbd>-drag to zoom to a box · <kbd>+</kbd> <kbd>−</kbd> zoom · <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> pan · <kbd>⌫</kbd> back · <kbd>0</kbd> reset</span>
+  </p>
+
+  <div class="mb-panels">
+    <section class="mb-panel" aria-labelledby="navHeading">
+      <h2 id="navHeading">Zoom</h2>
+
+      <div class="mb-field">
+        <p class="mb-label" id="clickModeLabel">Click mode</p>
+        <div class="seg" role="radiogroup" aria-labelledby="clickModeLabel">
+          <label><input type="radio" name="clickMode" value="zoomIn" checked><span>Zoom in</span></label>
+          <label><input type="radio" name="clickMode" value="zoomOut"><span>Zoom out</span></label>
+          <label><input type="radio" name="clickMode" value="center"><span>Center</span></label>
+        </div>
+      </div>
+
+      <div class="mb-field">
+        <p class="mb-label" id="zoomStepLabel">Zoom step <span>clicks, buttons, keys</span></p>
+        <div class="seg" role="radiogroup" aria-labelledby="zoomStepLabel">
+          <label><input type="radio" name="zoomStep" value="1.5"><span>1.5×</span></label>
+          <label><input type="radio" name="zoomStep" value="2"><span>2×</span></label>
+          <label><input type="radio" name="zoomStep" value="3.3333333333333335" checked><span>3.3×</span></label>
+          <label><input type="radio" name="zoomStep" value="10"><span>10×</span></label>
+          <label><input type="radio" name="zoomStep" value="100"><span>100×</span></label>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-panel" aria-labelledby="renderHeading">
+      <h2 id="renderHeading">Render</h2>
+
+      <div class="mb-field">
+        <p class="mb-label" id="sizeLabel">Size</p>
+        <div class="seg" role="radiogroup" aria-labelledby="sizeLabel">
+          <label title="Fit the page"><input type="radio" name="size" value="fit" checked><span>Fit</span></label>
+          <label title="140 × 90"><input type="radio" name="size" value="xs"><span>XS</span></label>
+          <label title="280 × 180"><input type="radio" name="size" value="s"><span>S</span></label>
+          <label title="560 × 360"><input type="radio" name="size" value="m"><span>M</span></label>
+          <label title="1120 × 720"><input type="radio" name="size" value="l"><span>L</span></label>
+          <label title="2880 × 1800"><input type="radio" name="size" value="full"><span>Full</span></label>
+        </div>
+      </div>
+
+      <div class="mb-field">
+        <label class="mb-label" for="rangeIterations">Max iterations <output id="iterationsValue" for="rangeIterations">2,500</output></label>
+        <input class="mb-range" value="3.398" type="range" min="3" max="7" step="0.001" id="rangeIterations" aria-describedby="iterationsValue">
+        <div class="mb-scale" aria-hidden="true"><span>1,000</span><span>10,000,000</span></div>
+      </div>
+
+      <div class="mb-field">
+        <p class="mb-label">Status</p>
+        <span class="renderStatus mb-status"></span>
+      </div>
+    </section>
+
+    <section class="mb-panel" aria-labelledby="locationHeading">
+      <h2 id="locationHeading">Location</h2>
+
+      <div class="mb-field">
+        <span class="currentLocation mb-location"></span>
+        <div class="mb-row">
+          <button class="btn" type="button" id="copyButton">Copy link</button>
+          <button class="btn btn-primary" type="button" id="generateButton">Generate image</button>
+        </div>
+      </div>
+
+      <div class="mb-field">
+        <p class="mb-label">Bookmarks</p>
+        <ul class="mb-bookmarks">
+          <li><a href="/projects/mandelbrot/show.html?x=-1.7320030506165627&amp;y=5.689874216009001e-4&amp;z=3.874e-10">Location 1</a></li>
+          <li><a href="/projects/mandelbrot/show.html?x=-1.7499977518652907&amp;y=3.9513418543621205e-8&amp;z=8.084e-10">Location 2</a></li>
+        </ul>
+      </div>
+    </section>
   </div>
 
-  <div>
-    <strong>Render:</strong>
-    <span class="renderStatus"></span>
-  </div>
-
-  <div>
-    <strong>Output:</strong><br/>
-
-    <button class="btn" onclick="generateImage();">Generate Image</button>
-
-  </div>
-
-  <div class="imageOutput">
-    <br/><br/>
-
-  </div>
-
-  <div>
-    <strong>Bookmark Dev</strong>
-    <ul>
-      <li>
-        <a href="/projects/mandelbrot/show.html?x=-1.7320030506165627&y=0.0005689874216009001&zoom=3.874204889999998e-10">Location 1</a>
-      </li>
-      <li>
-        <a href="/projects/mandelbrot/show.html?x=-1.7499977518652907&y=3.9513418543621205e-8&zoom=8.08432815650446e-10">Location 2</a>
-      </li>
-    </ul>
-  </div>
+  <div class="imageOutput" aria-live="polite" hidden></div>
 
 </main>
 
