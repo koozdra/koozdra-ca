@@ -132,6 +132,17 @@ function getColor(value) {
   return `rgb(${red}, ${green}, ${blue})`;
 }
 
+// Black or white, whichever is more readable on the given "rgb(r, g, b)" background.
+// Contrast with black and with white is equal at relative luminance ~0.179, so the
+// chosen colour always clears 4.5:1.
+function readableTextColor(rgb) {
+  const [r, g, b] = rgb.match(/\d+/g).slice(0, 3).map((v) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.179 ? "#000" : "#fff";
+}
+
 function createTable(divId, data) {
   const table = document.createElement("table");
 
@@ -144,9 +155,7 @@ function createTable(divId, data) {
       if (cellIndex > 0) {
         td.style.backgroundColor = getColor(cell);
 
-        // Set text color based on background brightness
-        const value = parseFloat(cell);
-        td.style.color = value < 0.75 ? "black" : "white";
+        td.style.color = readableTextColor(td.style.backgroundColor);
       }
 
       tr.appendChild(td);

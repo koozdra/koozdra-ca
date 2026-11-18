@@ -943,8 +943,24 @@ function generateImage() {
   output.appendChild(img);
 }
 
+// The slider is logarithmic: its value is log10 of the iteration limit, so it
+// covers 1,000 to 2,000,000 with useful resolution at both ends. Each step is
+// rounded to two significant figures (2,500 / 13,000 / 1,200,000).
+const MAX_ITERATIONS = 2000000;
+function sliderIterations(value) {
+  const n = 10 ** parseFloat(value);
+  const unit = 10 ** Math.max(0, Math.floor(Math.log10(n)) - 1);
+  return Math.min(MAX_ITERATIONS, Math.round(n / unit) * unit);
+}
+
+function showIterations(e) {
+  document.getElementById("iterationsValue").textContent =
+    sliderIterations(e.target.value).toLocaleString("en-US");
+}
+
 function iterations(e) {
-  state.maxIterations = parseInt(e.target.value, 10);
+  showIterations(e);
+  state.maxIterations = sliderIterations(e.target.value);
   render(state);
 }
 
@@ -959,6 +975,7 @@ function start() {
 
   canvas.addEventListener("click", onCanvasClick);
   document.getElementById("rangeIterations").onchange = iterations;
+  document.getElementById("rangeIterations").oninput = showIterations;
 
   render(state);
 }

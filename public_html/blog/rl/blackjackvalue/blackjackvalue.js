@@ -24,6 +24,23 @@ function getColorFromValue(value) {
   return `rgb(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)})`;
 }
 
+// Black or white, whichever is more readable on the given "rgb(r, g, b)" background.
+// Contrast with black and with white is equal at relative luminance ~0.179, so the
+// chosen colour always clears 4.5:1.
+function readableTextColor(rgb) {
+  const [r, g, b] = rgb.match(/\d+/g).slice(0, 3).map((v) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.179 ? "#000" : "#fff";
+}
+
+// Inline style for a value cell: its heatmap colour plus readable text.
+function cellStyle(value) {
+  const background = getColorFromValue(value);
+  return `background-color:${background};color:${readableTextColor(background)}`;
+}
+
 const writeTable = (stateValues, table) => {
   // console.log(table);
 
@@ -53,7 +70,7 @@ const writeTable = (stateValues, table) => {
                 const value = stateValues.get(key);
                 const [count, total] = value ? value : [0, 0];
                 const average = count > 0 ? total / count : 0;
-                return `<td style="background-color:${getColorFromValue(
+                return `<td style="${cellStyle(
                   average
                 )}">${average.toFixed(2)}</td>`;
               }).join("")}
@@ -135,7 +152,7 @@ const writeStateActionValueTable = (data, table) => {
                         const value = data.get(key);
                         const [count, total] = value ? value : [0, 0];
                         const average = count > 0 ? total / count : 0;
-                        return `<td style="background-color:${getColorFromValue(
+                        return `<td style="${cellStyle(
                           average
                         )}">${average.toFixed(2)}</td>`;
                       }).join("")}
@@ -196,7 +213,7 @@ const writeBestStateAction = (stateActionValues) => {
                     maxValue = Math.max(maxValue, total / count);
                   }
 
-                  return `<td style="background-color:${getColorFromValue(
+                  return `<td style="${cellStyle(
                     maxValue
                   )}">${maxValue.toFixed(2)}</td>`;
                 }).join("")}
@@ -245,9 +262,9 @@ const writeStateOptimalActionTable = (
 
                   switch (value) {
                     case "hit":
-                      return `<td style="background-color:rgb(255, 182, 193)">H</td>`;
+                      return `<td style="background-color:rgb(255, 182, 193);color:#111">H</td>`;
                     case "stick":
-                      return `<td style="background-color:rgb(173, 216, 230)">S</td>`;
+                      return `<td style="background-color:rgb(173, 216, 230);color:#111">S</td>`;
                     case undefined:
                       return "<td>-</td>";
                   }

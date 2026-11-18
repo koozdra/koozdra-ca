@@ -301,8 +301,16 @@ hr {
 }
 
 .site-footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text-muted);
   text-decoration: none;
+}
+
+.site-footer .icon {
+  width: 16px;
+  height: 16px;
 }
 
 .site-footer a:hover {
@@ -360,10 +368,10 @@ hr {
   color: var(--on-accent);
 }
 
-.button img {
+.icon {
+  flex: none;
   width: 18px;
   height: 18px;
-  border-radius: 3px;
 }
 
 .back-link {
@@ -829,12 +837,17 @@ hr {
   max-width: 100%;
 }
 
-/* Wide tables (the blackjack heatmaps) scroll instead of widening the page. */
+/* Tables wider than the text column (the blackjack heatmaps) break out of it,
+   centred on the column, up to the wide page width. Past that they scroll
+   instead of widening the page. */
 .prose table {
   display: block;
   width: max-content;
-  max-width: 100%;
+  max-width: min(100vw - 2 * var(--gutter), var(--width-wide) - 2 * var(--gutter));
   overflow-x: auto;
+  margin-left: 50%;
+  margin-right: 0;
+  transform: translateX(-50%);
 }
 
 .prose td,
